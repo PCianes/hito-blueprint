@@ -6,4 +6,4 @@
 - your own rules are files named `my-*.md` in `custom/rules/`;
 - to leave a base rule out, add a line `rules/<name>` to `custom/disable`: the rule stays in `blueprint/`, untouched, but no longer reaches `AGENTS.md`, and updates cannot bring it back.
 
-Besides rules, `custom/skills/` holds the owner's skills (see Skills). Anything else in `custom/` makes `rules.sh` fail. `AGENTS.md` is generated from both by `blueprint/scripts/rules.sh`. Never edit it by hand.
+Besides rules, `custom/skills/` holds the owner's skills (see Skills), `custom/hooks/commit-msg`, if present, is run with the commit message and can reject it, and `custom/hooks/test-*.sh` run with the other tests. Anything else in `custom/` makes the check fail. `AGENTS.md` is generated from both by `blueprint/scripts/rules.sh`. Never edit it by hand.

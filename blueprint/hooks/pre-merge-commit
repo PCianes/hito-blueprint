@@ -1,0 +1,3 @@
+#!/bin/sh
+# Enabled with: git config core.hooksPath blueprint/hooks
+exec sh "$(git rev-parse --show-toplevel)/blueprint/scripts/check.sh" --staged
