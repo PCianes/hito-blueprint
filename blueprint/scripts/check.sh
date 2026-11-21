@@ -33,6 +33,11 @@ if [ "$in_git" = yes ] && { [ "$mode" = --staged ] || [ "$mode" = --warn ]; }; t
   git ls-files -z -- AGENTS.md blueprint custom .agents/skills .claude/skills | git checkout-index -z --stdin --prefix="$base/"
   cached=--cached
 fi
+# On disk, notes not yet added to git are read too (ignored files are not), so a manual run
+# sees what the next git add would bring. Before a commit, only what it carries counts.
+untracked=
+others=
+if [ "$in_git" = yes ] && [ -z "$cached" ]; then untracked=--untracked; others="--others --exclude-standard"; fi
 
 # Before a commit, the tests of the scripts run only if the commit touches the scripts, the
 # git hooks or .gitattributes, the only things that can break them; the guards below always run.
@@ -77,8 +82,8 @@ HITO_ROOT=$base sh "$base/blueprint/scripts/skills.sh" --check || status=1
 #    In the commit, encrypted/ holds ciphertext, so only its README is read. A note in
 #    archive/ keeps the type it had at its old path, archive/ stripped.
 if [ "$in_git" = yes ]; then
-  notes=$(git -c core.quotePath=false ls-files -- inbox goals projects knowledge sources journal archive encrypted/README.md)
-  found=$(git -c core.quotePath=false grep $cached -n -I -E '^(---|type:|created:)' -- inbox goals projects knowledge sources journal archive encrypted/README.md 2> /dev/null)
+  notes=$(git -c core.quotePath=false ls-files --cached $others -- inbox goals projects knowledge sources journal archive encrypted/README.md)
+  found=$(git -c core.quotePath=false grep $cached $untracked -n -I -E '^(---|type:|created:)' -- inbox goals projects knowledge sources journal archive encrypted/README.md 2> /dev/null)
 else
   notes=$(find inbox goals projects knowledge sources journal archive -type f 2> /dev/null; [ -f encrypted/README.md ] && echo encrypted/README.md)
   found=$(printf '%s\n' "$notes" | while IFS= read -r f; do [ -f "$f" ] && grep -n -E '^(---|type:|created:)' "$f" /dev/null; done)
@@ -133,8 +138,8 @@ pattern='^[[:space:]]*(```|~~~)|\]\('
 existing=
 if [ "$in_git" = yes ]; then
   skip="':(exclude).agents' ':(exclude).claude' ':(exclude)blueprint/rules' ':(exclude)custom/rules' ':(exclude)encrypted'"
-  found=$({ eval "git -c core.quotePath=false grep $cached -n -I -E \"\$pattern\" -- '*.md' $skip"
-    git -c core.quotePath=false grep $cached -n -I -E "$pattern" -- encrypted/README.md; } 2> /dev/null)
+  found=$({ eval "git -c core.quotePath=false grep $cached $untracked -n -I -E \"\$pattern\" -- '*.md' $skip"
+    git -c core.quotePath=false grep $cached $untracked -n -I -E "$pattern" -- encrypted/README.md; } 2> /dev/null)
   [ -n "$cached" ] && existing=$(git -c core.quotePath=false ls-files)
 else
   found=$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.agents/*' ! -path './.claude/*' \

@@ -112,6 +112,10 @@ setup; note inbox/x.md '# bad\n'; fm inbox > "$r/inbox/x.md"
 reject "reads the note as the commit will carry it, not the disk" "inbox/x.md: no frontmatter" --staged
 setup; note inbox/x.md "$(fm inbox)"; echo '# bad' > "$r/inbox/x.md"
 reject "a manual run reads the disk" "inbox/x.md: no frontmatter"
+setup; mkdir -p "$r/knowledge"; echo "# bad" > "$r/knowledge/new.md"
+reject "a manual run reads a note not yet added to git" "knowledge/new.md: no frontmatter"
+pass "a commit does not carry a note not yet added" --staged
+echo "knowledge/new.md" > "$r/.gitignore"; pass "a manual run skips an ignored note"
 setup; note archive/README.md "$(fm index)"; note archive/projects/talk/README.md "$(fm area)"; note archive/projects/talk/plan.md "$(fm project)"
 pass "accepts archived notes with the type they had" --staged
 setup; note archive/projects/talk/README.md "$(fm knowledge)"
@@ -138,6 +142,8 @@ reject "stops an absolute link" "not a relative link" --staged
 setup; note knowledge/a.md "$(L '[b](b.md)')"; fm knowledge > "$r/knowledge/b.md"
 reject "a link counts only if its target is in the commit" "knowledge/a.md:7: b.md" --staged
 pass "a manual run follows links on disk"
+setup; mkdir -p "$r/knowledge"; L "[b](b.md)" > "$r/knowledge/a.md"
+reject "a manual run follows links in a note not yet added to git" "knowledge/a.md:7: b.md"
 setup; note projects/README.md "$(printf '%s\n%s\n' "$(fm index)" '[talk](talk/README.md)')"
 note projects/talk/README.md "$(printf '%s\n%s\n' "$(fm area)" '[up](../README.md)')"
 pass "a project linked both ways passes" --staged
