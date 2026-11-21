@@ -6,4 +6,4 @@
 - your own rules are files named `my-*.md` in `custom/rules/`;
 - to leave a base rule out, add a line `rules/<name>` to `custom/disable`: the rule stays in `blueprint/`, untouched, but no longer reaches `AGENTS.md`, and updates cannot bring it back.
 
-Today only rules can be customized; anything else in `custom/` makes `rules.sh` fail. `AGENTS.md` is generated from both by `blueprint/scripts/rules.sh`. Never edit it by hand.
+Besides rules, `custom/skills/` holds the owner's skills (see Skills). Anything else in `custom/` makes `rules.sh` fail. `AGENTS.md` is generated from both by `blueprint/scripts/rules.sh`. Never edit it by hand.
