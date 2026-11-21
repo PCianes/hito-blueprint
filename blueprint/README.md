@@ -5,7 +5,7 @@ The shared base of a plain-text notes system for one person and their agents: Ma
 ## Principles
 
 - AI first: built for agents to work on from the start, not an existing system with AI added on top.
-- Decoupled: the data are open files the owner keeps; the viewer, the model and the agent can each be replaced without touching them.
+- Decoupled: the data are open files the owner keeps, and so is what agents learn, which never stays inside an agent; the viewer, the model and the agent can each be replaced without touching them.
 
 ## What's inside
 
