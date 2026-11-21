@@ -2,6 +2,11 @@
 
 The shared base of a plain-text notes system for one person and their agents: Markdown files in git, readable by any agent and any viewer. Everything here is common to every copy and stays in English; each owner writes their own notes and changes in whatever language they like.
 
+## Principles
+
+- AI first: built for agents to work on from the start, not an existing system with AI added on top.
+- Decoupled: the data are open files the owner keeps; the viewer, the model and the agent can each be replaced without touching them.
+
 ## What's inside
 
 - `rules/`: one file per rule, plus `ORDER`, the order in which they appear.
