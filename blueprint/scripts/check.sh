@@ -74,16 +74,19 @@ HITO_ROOT=$base sh "$base/blueprint/scripts/skills.sh" --check || status=1
 # 3. Every note carries type and created in its frontmatter, with a type its folder allows
 #    (see Type in AGENTS.md). It reads what the commit will carry before a commit, and the
 #    disk otherwise, with one grep for all notes so it stays fast with thousands of them.
-#    In the commit, encrypted/ holds ciphertext, so only its README is read.
+#    In the commit, encrypted/ holds ciphertext, so only its README is read. A note in
+#    archive/ keeps the type it had at its old path, archive/ stripped.
 if [ "$in_git" = yes ]; then
-  notes=$(git -c core.quotePath=false ls-files -- inbox goals projects knowledge sources journal encrypted/README.md)
-  found=$(git -c core.quotePath=false grep $cached -n -I -E '^(---|type:|created:)' -- inbox goals projects knowledge sources journal encrypted/README.md 2> /dev/null)
+  notes=$(git -c core.quotePath=false ls-files -- inbox goals projects knowledge sources journal archive encrypted/README.md)
+  found=$(git -c core.quotePath=false grep $cached -n -I -E '^(---|type:|created:)' -- inbox goals projects knowledge sources journal archive encrypted/README.md 2> /dev/null)
 else
-  notes=$(find inbox goals projects knowledge sources journal -type f 2> /dev/null; [ -f encrypted/README.md ] && echo encrypted/README.md)
+  notes=$(find inbox goals projects knowledge sources journal archive -type f 2> /dev/null; [ -f encrypted/README.md ] && echo encrypted/README.md)
   found=$(printf '%s\n' "$notes" | while IFS= read -r f; do [ -f "$f" ] && grep -n -E '^(---|type:|created:)' "$f" /dev/null; done)
 fi
 bad=$({ printf '%s\n' "$notes" | sed 's/^/F /'; printf '%s\n' "$found" | sed 's/^/G /'; } | awk '
   function allowed(p) {
+    if (p == "archive/README.md") return "index"
+    sub(/^archive\//, "", p)
     if (p ~ /^(inbox|goals|projects|knowledge|sources|journal|encrypted)\/README\.md$/) return "index"
     if (p ~ /^inbox\//) return "inbox"
     if (p ~ /^goals\//) return "goal"
@@ -94,7 +97,7 @@ bad=$({ printf '%s\n' "$notes" | sed 's/^/F /'; printf '%s\n' "$found" | sed 's/
     return ""
   }
   function value(s) { sub(/^[a-z]+:[ \t]*/, "", s); sub(/[ \t]+$/, "", s); return s }
-  /^F / { p = substr($0, 3); if (p ~ /\.md$/) file[++n] = p; next }
+  /^F / { p = substr($0, 3); if (p ~ /\.md$/ && tolower(p) !~ /^archive\/encrypted\//) file[++n] = p; next }
   /^G / {
     s = substr($0, 3); sub(/\r$/, "", s)
     if (!match(s, /:[0-9]+:/)) next
@@ -120,12 +123,72 @@ bad=$({ printf '%s\n' "$notes" | sed 's/^/F /'; printf '%s\n' "$found" | sed 's/
 [ -z "$bad" ] || fail "notes without a valid frontmatter (see Type in AGENTS.md):
 $bad"
 
+# 4. Every relative link points to something that exists: in what the commit will carry
+#    before a commit, and on disk otherwise, so moving a note (to archive/, say) or renaming
+#    one never leaves a dead link unnoticed. Links to the web or to an anchor in the same
+#    note, and links inside code, are skipped. Rules are read in AGENTS.md, where their links
+#    end up, and skill copies in their originals; in the commit, encrypted/ is ciphertext.
+tab=$(printf '\t')
+pattern='^[[:space:]]*(```|~~~)|\]\('
+existing=
+if [ "$in_git" = yes ]; then
+  skip="':(exclude).agents' ':(exclude).claude' ':(exclude)blueprint/rules' ':(exclude)custom/rules' ':(exclude)encrypted'"
+  found=$({ eval "git -c core.quotePath=false grep $cached -n -I -E \"\$pattern\" -- '*.md' $skip"
+    git -c core.quotePath=false grep $cached -n -I -E "$pattern" -- encrypted/README.md; } 2> /dev/null)
+  [ -n "$cached" ] && existing=$(git -c core.quotePath=false ls-files)
+else
+  found=$(find . -type f -name '*.md' ! -path './.git/*' ! -path './.agents/*' ! -path './.claude/*' \
+    ! -path './blueprint/rules/*' ! -path './custom/rules/*' \( ! -path './encrypted/*' -o -path ./encrypted/README.md \) \
+    -exec grep -n -E "$pattern" /dev/null {} + 2> /dev/null | sed 's|^\./||')
+fi
+links=$({ [ -n "$cached" ] && printf '%s\n' "$existing" | sed 's/^/E /'; printf '%s\n' "$found" | sed 's/^/G /'; } | awk -v staged="$cached" '
+  function resolve(dir, t,   n, i, k, part, out) {
+    n = split(dir "/" t, part, "/"); k = 0
+    for (i = 1; i <= n; i++) {
+      if (part[i] == "" || part[i] == ".") continue
+      if (part[i] == "..") { if (k == 0) return ""; k--; continue }
+      seg[++k] = part[i]
+    }
+    out = "."; for (i = 1; i <= k; i++) out = (i == 1 ? seg[i] : out "/" seg[i])
+    return out
+  }
+  /^E / { p = substr($0, 3); have[p] = 1; while (sub(/\/[^\/]*$/, "", p)) have[p] = 1; next }
+  /^G / {
+    s = substr($0, 3)
+    if (!match(s, /:[0-9]+:/)) next
+    p = substr(s, 1, RSTART - 1); ln = substr(s, RSTART + 1, RLENGTH - 2); t = substr(s, RSTART + RLENGTH)
+    if (t ~ /^[ \t]*(```|~~~)/) { fence[p] = !fence[p]; next }
+    if (fence[p]) next
+    gsub(/`[^`]*`/, "", t)
+    dir = p; if (!sub(/\/[^\/]*$/, "", dir)) dir = ""
+    while (match(t, /\]\([^)]*\)/)) {
+      l = substr(t, RSTART + 2, RLENGTH - 3); t = substr(t, RSTART + RLENGTH)
+      sub(/^[ \t]+/, "", l); sub(/[ \t].*$/, "", l); sub(/^</, "", l); sub(/>$/, "", l)
+      if (l == "" || l ~ /^#/ || l ~ /^[A-Za-z][A-Za-z0-9+.-]*:/) continue
+      target = l; sub(/[#?].*$/, "", target); gsub(/%20/, " ", target)
+      if (target ~ /^\//) { state = "absolute"; r = "." }
+      else { r = resolve(dir, target); if (r == "") { state = "outside"; r = "." } else if (staged == "") state = "disk"; else state = (r in have) ? "ok" : "missing" }
+      print p "\t" ln "\t" l "\t" r "\t" state
+    }
+  }')
+broken=$(printf '%s\n' "$links" | while IFS="$tab" read -r src ln l r state; do
+  case $state in
+    (ok | "") ;;
+    (disk) [ -e "$r" ] || echo "$src:$ln: $l" ;;
+    (outside) echo "$src:$ln: $l (points outside the repository)" ;;
+    (absolute) echo "$src:$ln: $l (not a relative link)" ;;
+    (*) echo "$src:$ln: $l" ;;
+  esac
+done)
+[ -z "$broken" ] || fail "links to nothing; fix each one or the file it points to (see Links in AGENTS.md):
+$broken"
+
 if [ "$in_git" = no ]; then
   echo "check: not the top of a git repository; the hooks, secrets and encryption are NOT checked, and encrypted/ is not encrypted" >&2
   exit $status
 fi
 
-# 4. The hooks are on and executable, both on disk (where git runs them from) and in the
+# 5. The hooks are on and executable, both on disk (where git runs them from) and in the
 #    commit; otherwise none of this runs.
 [ "$(git config core.hooksPath)" = "blueprint/hooks" ] || fail "the hooks are off; run: git config core.hooksPath blueprint/hooks"
 for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewrite; do
@@ -133,12 +196,12 @@ for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewr
   [ -x "$base/blueprint/hooks/$h" ] || fail "blueprint/hooks/$h is missing or not executable in the commit"
 done
 
-# 5. Scripts and hooks keep Unix line endings on every system (core.autocrlf would break them).
+# 6. Scripts and hooks keep Unix line endings on every system (core.autocrlf would break them).
 for f in $(git ls-files -- 'blueprint/scripts/*' 'blueprint/hooks/*' 'custom/hooks/*'); do
   [ "$(git check-attr $cached eol -- "$f" | sed 's/.*: eol: //')" = lf ] || fail "$f needs 'eol=lf' in .gitattributes (see blueprint/README.md)"
 done
 
-# 6. No secret file is tracked, wherever it is, in any letter case, whatever .gitignore says.
+# 7. No secret file is tracked, wherever it is, in any letter case, whatever .gitignore says.
 #    core.quotePath=false shows names such as salud-año.md as they are; names git still
 #    quotes (control characters, quotes) are rejected, since they cannot be checked.
 files=$(git -c core.quotePath=false ls-files)
@@ -150,7 +213,7 @@ odd=$(printf '%s\n' "$files" | grep '^"' || true)
 [ -z "$odd" ] || fail "file names git cannot show plainly; rename them:
 $odd"
 
-# 7. Everything tracked in encrypted/ (any letter case), except its README, is set to be
+# 8. Everything tracked in encrypted/ (any letter case), except its README, is set to be
 #    encrypted by git-crypt and is stored encrypted: git-crypt blobs start with a NUL byte
 #    and "GITCRYPT". This cannot tell real ciphertext from a forged header.
 plain=$(printf '%s\n' "$files" | awk '{ n = tolower($0) } n ~ /^encrypted\// && $0 != "encrypted/README.md"' |
@@ -161,8 +224,12 @@ plain=$(printf '%s\n' "$files" | awk '{ n = tolower($0) } n ~ /^encrypted\// && 
   done)
 [ -z "$plain" ] || fail "not encrypted; check .gitattributes and git-crypt:
 $plain"
+# Archiving never takes anything out of encrypted/: archive/encrypted/ would not be encrypted.
+leak=$(printf '%s\n' "$files" | awk 'tolower($0) ~ /^archive\/encrypted\//')
+[ -z "$leak" ] || fail "sensitive material stays in encrypted/, never in archive/:
+$leak"
 
-# 8. After an operation git cannot block, the new commit's message must pass the owner's hook.
+# 9. After an operation git cannot block, the new commit's message must pass the owner's hook.
 if [ "$mode" = --warn ] && [ -f custom/hooks/commit-msg ]; then
   m=$(mktemp)
   git log -1 --format=%B > "$m"

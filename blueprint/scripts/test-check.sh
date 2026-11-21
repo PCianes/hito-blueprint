@@ -112,6 +112,38 @@ setup; note inbox/x.md '# bad\n'; fm inbox > "$r/inbox/x.md"
 reject "reads the note as the commit will carry it, not the disk" "inbox/x.md: no frontmatter" --staged
 setup; note inbox/x.md "$(fm inbox)"; echo '# bad' > "$r/inbox/x.md"
 reject "a manual run reads the disk" "inbox/x.md: no frontmatter"
+setup; note archive/README.md "$(fm index)"; note archive/projects/talk/README.md "$(fm area)"; note archive/projects/talk/plan.md "$(fm project)"
+pass "accepts archived notes with the type they had" --staged
+setup; note archive/projects/talk/README.md "$(fm knowledge)"
+reject "stops an archived note with a type its old folder does not allow" 'type "knowledge" is not allowed here' --staged
+setup; stage_blob 'pin 1234\n' archive/encrypted/x.md
+reject "stops sensitive material moved to archive/" "never in archive/" --staged
+
+# links: every relative link points to something in the commit
+L() { printf '%s\n%s\n' "$(fm knowledge)" "$1"; } # a note whose line 7 is $1
+setup; note knowledge/a.md "$(L '[b](b.md)')"
+reject "stops a link to a note that does not exist" "knowledge/a.md:7: b.md" --staged
+note knowledge/b.md "$(fm knowledge)"; pass "passes once that note exists" --staged
+setup; note knowledge/b.md "$(fm knowledge)"; note "knowledge/my note.md" "$(fm knowledge)"
+note knowledge/a.md "$(L '[w](https://x.y) [m](mailto:a@b.c) [h](#top) [s](b.md#part) [d](../knowledge/) [n](my%20note.md) [t](b.md "title") `[c](nope.md)`')"
+pass "skips web links, anchors and inline code; follows anchors, folders, spaces and titles" --staged
+setup; note knowledge/a.md "$(printf '%s\n```\n[z](nope.md)\n```\n' "$(fm knowledge)")"
+pass "skips links inside a code block" --staged
+setup; note knowledge/a.md "$(L '![i](img.png)')"
+reject "stops an image that does not exist" "knowledge/a.md:7: img.png" --staged
+setup; note knowledge/a.md "$(L '[o](../../x.md)')"
+reject "stops a link that leaves the repository" "points outside the repository" --staged
+setup; note knowledge/a.md "$(L '[r](/AGENTS.md)')"
+reject "stops an absolute link" "not a relative link" --staged
+setup; note knowledge/a.md "$(L '[b](b.md)')"; fm knowledge > "$r/knowledge/b.md"
+reject "a link counts only if its target is in the commit" "knowledge/a.md:7: b.md" --staged
+pass "a manual run follows links on disk"
+setup; note projects/README.md "$(printf '%s\n%s\n' "$(fm index)" '[talk](talk/README.md)')"
+note projects/talk/README.md "$(printf '%s\n%s\n' "$(fm area)" '[up](../README.md)')"
+pass "a project linked both ways passes" --staged
+mkdir -p "$r/archive/projects"; git -C "$r" mv projects/talk archive/projects/talk
+reject "moving a project to archive/ shows the links to it it broke" "projects/README.md:7: talk/README.md" --staged
+reject "and the links in it it broke" "archive/projects/talk/README.md:7: ../README.md" --staged
 
 # skills, as the commit will carry them
 setup; mkdir -p "$r/blueprint/skills/demo"; printf -- '---\nname: demo\ndescription: Demo.\n---\n' > "$r/blueprint/skills/demo/SKILL.md"; git -C "$r" add -A
@@ -173,6 +205,8 @@ echo edited >> "$r/AGENTS.md"
 reject "still stops a hand-edited AGENTS.md without git" "out of date or was edited"
 setup; rm -rf "$r/.git"; mkdir -p "$r/inbox"; echo "# bad" > "$r/inbox/x.md"
 reject "still checks notes without git" "inbox/x.md: no frontmatter"
+setup; rm -rf "$r/.git"; mkdir -p "$r/knowledge"; L '[b](b.md)' > "$r/knowledge/a.md"
+reject "still checks links without git" "knowledge/a.md:7: b.md"
 setup; rm -rf "$r/.git"; git -C "$tmp" init -q
 pass "inside another repository, checks only itself"
 rm -rf "$tmp/.git"
