@@ -60,10 +60,10 @@ setup; echo x > "$r/custom/rules/links.markdown"; reject "rejects a rule with an
 setup; mkdir -p "$r/custom/rules/sub"; reject "rejects a folder inside custom/rules" "not something the base reads"
 setup; echo x > "$r/custom/rules/.links.md"; reject "rejects a hidden rule file" "not something the base reads"
 setup; echo 'rules/beta' > "$r/custom/disabled"; reject "rejects a misspelled custom/disable" "not something the base reads"
-setup; echo x > "$r/custom/hooks-extra"; reject "rejects an unknown entry in custom/" "not something the base reads"
-setup; mkdir -p "$r/custom/hooks"; echo x > "$r/custom/hooks/pre-commit"; reject "rejects a custom hook the base does not run" "not something the base reads"
+setup; echo x > "$r/custom/git-hooks-extra"; reject "rejects an unknown entry in custom/" "not something the base reads"
+setup; mkdir -p "$r/custom/git-hooks"; echo x > "$r/custom/git-hooks/pre-commit"; reject "rejects a custom hook the base does not run" "not something the base reads"
 setup; echo x > "$r/blueprint/rules/notes.txt"; reject "rejects a stray file in blueprint/rules" "not something the base reads"
-setup; touch "$r/custom/rules/.DS_Store" "$r/custom/.DS_Store"; mkdir -p "$r/custom/hooks"; echo x > "$r/custom/hooks/commit-msg"; echo x > "$r/custom/hooks/test-msg.sh"; pass "accepts what the base reads, and Finder's .DS_Store"
+setup; touch "$r/custom/rules/.DS_Store" "$r/custom/.DS_Store"; mkdir -p "$r/custom/git-hooks"; echo x > "$r/custom/git-hooks/commit-msg"; echo x > "$r/custom/git-hooks/test-msg.sh"; pass "accepts what the base reads, and Finder's .DS_Store"
 setup; printf '## alpha mine\r\n' > "$r/custom/rules/alpha.md"; pass "builds from a rule with Windows line endings"
 has "drops the carriage returns" "## alpha mine"
 run; sed 's/$/\r/' "$r/AGENTS.md" > "$r/x"; mv "$r/x" "$r/AGENTS.md"; pass "check ignores Windows line endings in AGENTS.md" --check

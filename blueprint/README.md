@@ -13,11 +13,11 @@ The shared base of a plain-text notes system for one person and their agents: Ma
 - `scripts/rules.sh`: builds `AGENTS.md` at the repository root from these rules and the owner's changes in `custom/`. With `--check`, it fails if `AGENTS.md` is out of date or was edited by hand.
 - `skills/`: common skills, one folder each with its `SKILL.md`, in the Agent Skills format.
 - `scripts/skills.sh`: copies the base skills and the owner's in `custom/skills/` to `.agents/skills/` (Codex, OpenCode) and `.claude/skills/` (Claude Code), where agents look for them. With `--check`, it fails if the copies are out of date or were edited by hand.
-- `scripts/check.sh`: runs every check. It fails if the tests fail, if `AGENTS.md` or the skill copies are out of date, if `custom/` holds something the base would ignore, if the hooks are off, if scripts lack `eol=lf`, if a note lacks `type` and `created` or carries a type its folder does not allow, if a relative link points to nothing, if a secret file is tracked (any letter case, anywhere), or if anything in `encrypted/` is not set and stored as git-crypt ciphertext. With `--staged`, as the hooks run it, it checks exactly what the next commit will contain rather than the files on disk, and runs the tests only if the commit touches the scripts, the hooks or `.gitattributes`; the guards run on every commit. Run it by hand to run every test.
+- `scripts/check.sh`: runs every check. It fails if the tests fail, if `AGENTS.md` or the skill copies are out of date, if `custom/` holds something the base would ignore, if the git hooks are off, if scripts lack `eol=lf`, if a note lacks `type` and `created` or carries a type its folder does not allow, if a relative link points to nothing, if a secret file is tracked (any letter case, anywhere), or if anything in `encrypted/` is not set and stored as git-crypt ciphertext. With `--staged`, as the git hooks run it, it checks exactly what the next commit will contain rather than the files on disk, and runs the tests only if the commit touches the scripts, the git hooks or `.gitattributes`; the guards run on every commit. Run it by hand to run every test.
 - `scripts/test-rules.sh`, `scripts/test-skills.sh` and `scripts/test-check.sh`: prove, in throwaway copies, that the scripts above do what they promise and stop every mistake they claim to stop, each for the right reason. `check.sh` runs all three.
-- `hooks/pre-commit` and `hooks/pre-merge-commit`: run `check.sh --staged` before each commit and each merge commit, and stop it if anything fails.
-- `hooks/commit-msg`: runs `custom/hooks/commit-msg`, if the owner has one, so they can reject commit messages, for example ones with trailers they do not want.
-- `hooks/post-commit`, `hooks/post-merge` and `hooks/post-rewrite`: run `check.sh --warn` after operations git gives no blocking hook for, and print a warning with how to undo them.
+- `git-hooks/pre-commit` and `git-hooks/pre-merge-commit`: run `check.sh --staged` before each commit and each merge commit, and stop it if anything fails.
+- `git-hooks/commit-msg`: runs `custom/git-hooks/commit-msg`, if the owner has one, so they can reject commit messages, for example ones with trailers they do not want.
+- `git-hooks/post-commit`, `git-hooks/post-merge` and `git-hooks/post-rewrite`: run `check.sh --warn` after operations git gives no blocking hook for, and print a warning with how to undo them.
 
 It needs only POSIX `sh` and git. On Windows, run it from Git Bash (installed with Git for Windows) or WSL; it is not tested there yet. It also works without git, with less: see below.
 
@@ -47,7 +47,7 @@ It needs only POSIX `sh` and git. On Windows, run it from Git Bash (installed wi
    .claude/skills/** -diff
    ```
 
-5. Run `sh blueprint/scripts/rules.sh`, `sh blueprint/scripts/skills.sh` and `git config core.hooksPath blueprint/hooks`. The hook setting is not cloned, so repeat it on every machine; the check fails while it is off.
+5. Run `sh blueprint/scripts/rules.sh`, `sh blueprint/scripts/skills.sh` and `git config core.hooksPath blueprint/git-hooks`. The git hooks setting is not cloned, so repeat it on every machine; the check fails while it is off.
 6. `rules.sh` writes the rules into `AGENTS.md`, the file most agents (Codex, OpenCode and others) load by themselves at the start of a session, so every rule reaches them without depending on the agent choosing to read another file. Claude Code reads `CLAUDE.md` instead: add one with the line `@AGENTS.md`, which imports it. If you already had an `AGENTS.md`, move its content to `custom/rules/my-*.md`, because `rules.sh` overwrites it. Keep the rules short: Codex reads only the first 32 KiB by default.
 
 ## Customize without editing
@@ -58,17 +58,17 @@ Never edit `blueprint/` in your copy: the next update would overwrite it. Put ch
 - **Add:** your own rules are files named `my-*.md` in `custom/rules/`. They go after the base rules.
 - **Disable:** one line `rules/<name>` per rule in `custom/disable` leaves that rule out of `AGENTS.md`. The file in `blueprint/` stays untouched, so an update cannot bring the rule back.
 - **Skills:** the same three moves in `custom/skills/`: a folder with the name of a base skill replaces it, your own are named `my-*`, and a line `skills/<name>` in `custom/disable` leaves one out, untouched in `blueprint/`. Each needs a `SKILL.md` with `name` (the folder name) and `description` in its frontmatter.
-- **Commit messages:** `custom/hooks/commit-msg` gets the message file as its argument and rejects the commit by exiting with an error. It runs with `sh`, so it needs no executable bit.
-- **Tests for your hooks:** any `custom/hooks/test-*.sh` runs with the other tests before each commit.
+- **Commit messages:** `custom/git-hooks/commit-msg` gets the message file as its argument and rejects the commit by exiting with an error. It runs with `sh`, so it needs no executable bit.
+- **Tests for your git hooks:** any `custom/git-hooks/test-*.sh` runs with the other tests before each commit.
 
 Run `sh blueprint/scripts/rules.sh` and `sh blueprint/scripts/skills.sh` after each change. The check fails if a custom file or a `disable` line points to a rule that does not exist, or if `custom/` holds anything the base would not read (a misspelled name, a wrong extension), so a typo or a rule renamed upstream never goes unnoticed. Folder names cannot be changed, and scripts are not replaced.
 
-## What the hooks cannot stop
+## What the git hooks cannot stop
 
-The checks are local and git decides when hooks run, so some ways in are not blocked:
+The checks are local and git decides when its hooks run, so some ways in are not blocked:
 
-- `git commit --no-verify` skips the blocking hooks on purpose.
-- cherry-pick, rebase and fast-forward merges have no blocking hook; the post hooks warn right after, with how to undo.
+- `git commit --no-verify` skips the blocking git hooks on purpose.
+- cherry-pick, rebase and fast-forward merges have no blocking hook; the post-* git hooks warn right after, with how to undo.
 - Commits made with plumbing (`git commit-tree`), branches fetched from elsewhere, and clones where `core.hooksPath` was never set.
 - The encryption check sees that a file starts like git-crypt ciphertext and that git-crypt is set for it; it cannot tell real ciphertext from a forged header.
 

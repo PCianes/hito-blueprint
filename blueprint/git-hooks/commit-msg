@@ -1,0 +1,7 @@
+#!/bin/sh
+# Enabled with: git config core.hooksPath blueprint/git-hooks
+# Extension point: runs custom/git-hooks/commit-msg, if the owner has one, with the message file.
+# It is run with sh, so it works even if a copy lost its executable bit.
+f="$(git rev-parse --show-toplevel)/custom/git-hooks/commit-msg"
+[ -f "$f" ] || exit 0
+exec sh "$f" "$1"

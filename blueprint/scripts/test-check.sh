@@ -1,5 +1,5 @@
 #!/bin/sh
-# Proves check.sh and the hooks: a clean repository passes, and every failure they promise to
+# Proves check.sh and the git hooks: a clean repository passes, and every failure they promise to
 # catch is stopped, each for the right reason. Each case runs in a throwaway repository.
 set -u
 
@@ -34,7 +34,7 @@ attributes() {
   printf '%s\n' '* text=auto eol=lf' 'encrypted/** filter=git-crypt diff=git-crypt -text' \
     'encrypted/README.md !filter !diff text' '.gitattributes !filter !diff'
 }
-setup() { # a minimal valid repository with the hooks on
+setup() { # a minimal valid repository with the git hooks on
   rm -rf "$r"
   mkdir -p "$r/encrypted"
   cp -R "$here/blueprint" "$r/blueprint"
@@ -42,7 +42,7 @@ setup() { # a minimal valid repository with the hooks on
   attributes > "$r/.gitattributes"
   (cd "$r" && sh blueprint/scripts/rules.sh)
   git -C "$r" init -q
-  git -C "$r" config core.hooksPath blueprint/hooks
+  git -C "$r" config core.hooksPath blueprint/git-hooks
   git -C "$r" add -A
 }
 
@@ -152,11 +152,11 @@ reject "stops a skill whose copies were not generated" "is missing" --staged
 echo edited >> "$r/.claude/skills/demo/SKILL.md"; git -C "$r" add -A
 reject "stops a hand-edited skill copy" "out of date or was edited" --staged
 
-# the hooks themselves
+# the git hooks themselves
 setup; git -C "$r" config --unset core.hooksPath
-reject "stops when the hooks are off" "the hooks are off"
+reject "stops when the git hooks are off" "the git hooks are off"
 for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewrite; do
-  setup; chmod -x "$r/blueprint/hooks/$h"
+  setup; chmod -x "$r/blueprint/git-hooks/$h"
   reject "stops when $h is not executable on disk, even if the index says it is" "$h is missing or not executable on disk" --staged
 done
 setup; grep -v 'eol=lf' "$r/.gitattributes" > "$tmp/a"; cp "$tmp/a" "$r/.gitattributes"; git -C "$r" add .gitattributes
@@ -169,7 +169,7 @@ if out=$(cd "$r" && HITO_IN_TEST=/nowhere sh blueprint/scripts/check.sh --staged
 elif printf '%s\n' "$out" | grep -qF "test-check.sh fails"; then ok
 else ko "a stray HITO_IN_TEST: failed for another reason: $out"; fi
 
-# the tests of the scripts run only when the commit touches the scripts or hooks
+# the tests of the scripts run only when the commit touches the scripts or git hooks
 setup; gc() { git -C "$r" -c user.name=T -c user.email=t@e.c commit -q --no-verify "$@" > /dev/null 2>&1; }
 gc -m base; printf 'exit 1\n' > "$r/blueprint/scripts/test-rules.sh"; git -C "$r" add -A; gc -m "broken tests"
 echo nota > "$r/note.md"; git -C "$r" add note.md
@@ -190,13 +190,13 @@ else ko "--warn fails instead of warning"; fi
 
 # the commit-msg extension point
 setup; printf 'fix: x\n' > "$tmp/msg"
-if (cd "$r" && sh blueprint/hooks/commit-msg "$tmp/msg"); then ok; else ko "commit-msg passes when custom/ has no hook"; fi
-mkdir -p "$r/custom/hooks"; printf 'grep -q nope "$1" && exit 1\nexit 0\n' > "$r/custom/hooks/commit-msg"
-if (cd "$r" && sh blueprint/hooks/commit-msg "$tmp/msg"); then ok; else ko "commit-msg passes a message the custom hook accepts"; fi
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg"); then ok; else ko "commit-msg passes when custom/ has no hook"; fi
+mkdir -p "$r/custom/git-hooks"; printf 'grep -q nope "$1" && exit 1\nexit 0\n' > "$r/custom/git-hooks/commit-msg"
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg"); then ok; else ko "commit-msg passes a message the custom hook accepts"; fi
 printf 'fix: nope\n' > "$tmp/msg"
-if (cd "$r" && sh blueprint/hooks/commit-msg "$tmp/msg" 2> /dev/null); then ko "commit-msg stops a message the custom hook rejects"; else ok; fi
-chmod -x "$r/custom/hooks/commit-msg"
-if (cd "$r" && sh blueprint/hooks/commit-msg "$tmp/msg" 2> /dev/null); then ko "commit-msg runs the custom hook without its executable bit"; else ok; fi
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg" 2> /dev/null); then ko "commit-msg stops a message the custom hook rejects"; else ok; fi
+chmod -x "$r/custom/git-hooks/commit-msg"
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg" 2> /dev/null); then ko "commit-msg runs the custom hook without its executable bit"; else ok; fi
 
 # without git
 setup; rm -rf "$r/.git"

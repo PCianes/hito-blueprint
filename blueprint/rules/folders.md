@@ -12,7 +12,7 @@ A folder exists only if (a) deciding whether a note belongs there is a question 
 | `journal/` | One file per day, `YYYY/YYYY-MM-DD.md`: a folder per year, the full date in the name | Owner; agents propose |
 | `encrypted/` | Sensitive material: encrypted on the remote, readable on the owner's machine | Owner; agents propose |
 | `archive/` | What is finished and should no longer add noise, at the path it had (`archive/projects/<name>/`); sensitive material stays in `encrypted/` | Owner; agents propose, and read it only when asked |
-| `blueprint/` | The shared base: rules, skills, scripts, hooks | Only where the base is developed; nobody in a copy |
+| `blueprint/` | The shared base: rules, skills, scripts, git hooks | Only where the base is developed; nobody in a copy |
 | `custom/` | The owner's changes to the base | Owner; agents propose |
 | `.agents/skills/`, `.claude/skills/` | Copies of the skills, generated for each agent | Nobody: `skills.sh` writes them |
 

@@ -35,7 +35,7 @@ if [ -d "$root/custom" ]; then
   for f in "$root"/custom/* "$root"/custom/.[!.]* "$root"/custom/..?*; do
     [ -e "$f" ] || continue
     case ${f##*/} in
-      (README.md | rules | skills | hooks | disable | .DS_Store) ;;
+      (README.md | rules | skills | git-hooks | disable | .DS_Store) ;;
       (*) unknown "custom/${f##*/}" ;;
     esac
   done
@@ -49,12 +49,12 @@ for f in "$custom"/* "$custom"/.[!.]* "$custom"/..?*; do
     (*) unknown "custom/rules/${f##*/}" ;;
   esac
 done
-for f in "$root"/custom/hooks/* "$root"/custom/hooks/.[!.]* "$root"/custom/hooks/..?*; do
+for f in "$root"/custom/git-hooks/* "$root"/custom/git-hooks/.[!.]* "$root"/custom/git-hooks/..?*; do
   [ -e "$f" ] || continue
   case ${f##*/} in
     (commit-msg | .DS_Store) ;;
-    (test-*.sh) [ -f "$f" ] || unknown "custom/hooks/${f##*/}" ;;
-    (*) unknown "custom/hooks/${f##*/}" ;;
+    (test-*.sh) [ -f "$f" ] || unknown "custom/git-hooks/${f##*/}" ;;
+    (*) unknown "custom/git-hooks/${f##*/}" ;;
   esac
 done
 

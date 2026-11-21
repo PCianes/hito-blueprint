@@ -1,4 +1,4 @@
 #!/bin/sh
-# Enabled with: git config core.hooksPath blueprint/hooks
+# Enabled with: git config core.hooksPath blueprint/git-hooks
 # git cannot block cherry-pick, rebase or fast-forward merges; this warns afterwards instead.
 exec sh "$(git rev-parse --show-toplevel)/blueprint/scripts/check.sh" --warn

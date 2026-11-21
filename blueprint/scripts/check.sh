@@ -1,7 +1,7 @@
 #!/bin/sh
 # Every check. Fails closed: any problem is reported and the exit status is 1.
 #   check.sh           check the working tree
-#   check.sh --staged  check exactly what the next commit will contain (blocking hooks)
+#   check.sh --staged  check exactly what the next commit will contain (blocking git hooks)
 #   check.sh --warn    after cherry-pick, rebase or a fast-forward merge, which git gives no
 #                      blocking hook for: check what is now committed, skip the tests, and
 #                      print a warning with how to undo instead of failing
@@ -35,15 +35,15 @@ if [ "$in_git" = yes ] && { [ "$mode" = --staged ] || [ "$mode" = --warn ]; }; t
 fi
 
 # Before a commit, the tests of the scripts run only if the commit touches the scripts, the
-# hooks or .gitattributes, the only things that can break them; the guards below always run.
+# git hooks or .gitattributes, the only things that can break them; the guards below always run.
 # A manual run, or a first commit, runs every test.
 run_tests=yes
 if [ "$mode" = --warn ]; then
   run_tests=no
 elif [ "$mode" = --staged ] && [ "$in_git" = yes ] && git rev-parse -q --verify HEAD > /dev/null; then
-  if git diff --cached --quiet HEAD -- blueprint/scripts blueprint/hooks custom/hooks .gitattributes; then
+  if git diff --cached --quiet HEAD -- blueprint/scripts blueprint/git-hooks custom/git-hooks .gitattributes; then
     run_tests=no
-    echo "check: this commit does not touch the scripts or hooks; their tests were skipped" >&2
+    echo "check: this commit does not touch the scripts or git hooks; their tests were skipped" >&2
   fi
 fi
 
@@ -53,7 +53,7 @@ fi
 if [ "$run_tests" = yes ]; then
   sh "$base/blueprint/scripts/test-rules.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-rules.sh fails"
   sh "$base/blueprint/scripts/test-skills.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-skills.sh fails"
-  for t in "$base"/custom/hooks/test-*.sh; do
+  for t in "$base"/custom/git-hooks/test-*.sh; do
     [ -e "$t" ] || continue
     sh "$t" > /dev/null 2>&1 || fail "${t#"$base"/} fails"
   done
@@ -184,20 +184,20 @@ done)
 $broken"
 
 if [ "$in_git" = no ]; then
-  echo "check: not the top of a git repository; the hooks, secrets and encryption are NOT checked, and encrypted/ is not encrypted" >&2
+  echo "check: not the top of a git repository; the git hooks, secrets and encryption are NOT checked, and encrypted/ is not encrypted" >&2
   exit $status
 fi
 
-# 5. The hooks are on and executable, both on disk (where git runs them from) and in the
+# 5. The git hooks are on and executable, both on disk (where git runs them from) and in the
 #    commit; otherwise none of this runs.
-[ "$(git config core.hooksPath)" = "blueprint/hooks" ] || fail "the hooks are off; run: git config core.hooksPath blueprint/hooks"
+[ "$(git config core.hooksPath)" = "blueprint/git-hooks" ] || fail "the git hooks are off; run: git config core.hooksPath blueprint/git-hooks"
 for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewrite; do
-  [ -x "$root/blueprint/hooks/$h" ] || fail "blueprint/hooks/$h is missing or not executable on disk, so git would skip it"
-  [ -x "$base/blueprint/hooks/$h" ] || fail "blueprint/hooks/$h is missing or not executable in the commit"
+  [ -x "$root/blueprint/git-hooks/$h" ] || fail "blueprint/git-hooks/$h is missing or not executable on disk, so git would skip it"
+  [ -x "$base/blueprint/git-hooks/$h" ] || fail "blueprint/git-hooks/$h is missing or not executable in the commit"
 done
 
-# 6. Scripts and hooks keep Unix line endings on every system (core.autocrlf would break them).
-for f in $(git ls-files -- 'blueprint/scripts/*' 'blueprint/hooks/*' 'custom/hooks/*'); do
+# 6. Scripts and git hooks keep Unix line endings on every system (core.autocrlf would break them).
+for f in $(git ls-files -- 'blueprint/scripts/*' 'blueprint/git-hooks/*' 'custom/git-hooks/*'); do
   [ "$(git check-attr $cached eol -- "$f" | sed 's/.*: eol: //')" = lf ] || fail "$f needs 'eol=lf' in .gitattributes (see blueprint/README.md)"
 done
 
@@ -230,10 +230,10 @@ leak=$(printf '%s\n' "$files" | awk 'tolower($0) ~ /^archive\/encrypted\//')
 $leak"
 
 # 9. After an operation git cannot block, the new commit's message must pass the owner's hook.
-if [ "$mode" = --warn ] && [ -f custom/hooks/commit-msg ]; then
+if [ "$mode" = --warn ] && [ -f custom/git-hooks/commit-msg ]; then
   m=$(mktemp)
   git log -1 --format=%B > "$m"
-  sh custom/hooks/commit-msg "$m" || status=1
+  sh custom/git-hooks/commit-msg "$m" || status=1
   rm -f "$m"
 fi
 
