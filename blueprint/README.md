@@ -13,8 +13,9 @@ The shared base of a plain-text notes system for one person and their agents: Ma
 - `scripts/rules.sh`: builds `AGENTS.md` at the repository root from these rules and the owner's changes in `custom/`. With `--check`, it fails if `AGENTS.md` is out of date or was edited by hand.
 - `skills/`: common skills, one folder each with its `SKILL.md`, in the Agent Skills format.
 - `scripts/skills.sh`: copies the base skills and the owner's in `custom/skills/` to `.agents/skills/` (Codex, OpenCode) and `.claude/skills/` (Claude Code), where agents look for them. With `--check`, it fails if the copies are out of date or were edited by hand.
+- `scripts/install.sh`: sets up a repository around `blueprint/`, and repairs one. It creates what is missing and never overwrites what exists: the content folders with their `README.md`, a `README.md`, a `CLAUDE.md` and a `GEMINI.md` at the root, `custom/README.md` and `custom/disable` with examples that change nothing, the lines `.gitignore` and `.gitattributes` need, `AGENTS.md` and the skill copies, `core.hooksPath` and, once you have run `git-crypt init`, the git-crypt lines for `encrypted/`; then it runs `check.sh`. Running it again changes nothing. Only the git-crypt key is left to you.
 - `scripts/check.sh`: runs every check. It fails if the tests fail, if `AGENTS.md` or the skill copies are out of date, if `custom/` holds something the base would ignore, if the git hooks are off, if scripts lack `eol=lf`, if a note lacks `type` and `created` or carries a type its folder does not allow, if a relative link points to nothing, if a secret file is tracked (any letter case, anywhere), or if anything in `encrypted/` is not set and stored as git-crypt ciphertext. With `--staged`, as the git hooks run it, it checks exactly what the next commit will contain rather than the files on disk, and runs the tests only if the commit touches the scripts, the git hooks or `.gitattributes`; the guards run on every commit. Run it by hand to run every test.
-- `scripts/test-rules.sh`, `scripts/test-skills.sh` and `scripts/test-check.sh`: prove, in throwaway copies, that the scripts above do what they promise and stop every mistake they claim to stop, each for the right reason. `check.sh` runs all three.
+- `scripts/test-rules.sh`, `scripts/test-skills.sh`, `scripts/test-check.sh` and `scripts/test-install.sh`: prove, in throwaway copies, that the scripts above do what they promise and stop every mistake they claim to stop, each for the right reason. `check.sh` runs all four.
 - `git-hooks/pre-commit` and `git-hooks/pre-merge-commit`: run `check.sh --staged` before each commit and each merge commit, and stop it if anything fails.
 - `git-hooks/commit-msg`: runs `custom/git-hooks/commit-msg`, if the owner has one, so they can reject commit messages, for example ones with trailers they do not want.
 - `git-hooks/post-commit`, `git-hooks/post-merge` and `git-hooks/post-rewrite`: run `check.sh --warn` after operations git gives no blocking hook for, and print a warning with how to undo them.
@@ -23,32 +24,12 @@ It needs only POSIX `sh` and git. On Windows, run it from Git Bash (installed wi
 
 ## Install
 
-1. Copy `blueprint/` into your repository and create the folders listed in `rules/folders.md`, each with a `README.md`.
-2. Optional: create `custom/rules/` for your own rules (see below).
-3. Make `.gitignore` ignore `.env`, `*.env`, `.env.*`, `*.key` and `*.pem`.
-4. Add to `.gitattributes`, so text keeps Unix line endings on every system (with `core.autocrlf` the scripts would break; the check fails without it):
+1. Copy `blueprint/` into a folder and run `git init` there (optional, but without git there are no git hooks and no encryption; see Without git). If the folder already has an `AGENTS.md`, move its content to `custom/rules/my-*.md` first, because the next step overwrites it.
+2. Run `sh blueprint/scripts/install.sh`. It creates what is missing, never overwrites what exists, and ends with the check. Run it again on every machine after cloning, because the git hooks setting is not cloned, and after each update.
+3. To change rules or skills, see `custom/README.md`, which `install.sh` creates with an example, and Customize without editing below.
+4. Optional, for `encrypted/`: run `git-crypt init`, keep the key outside the repository, and run `install.sh` again; it sets git-crypt for `encrypted/` in `.gitattributes`.
 
-   ```text
-   * text=auto eol=lf
-   ```
-
-   Optional, for `encrypted/`: run `git-crypt init`, keep the key outside the repository, and add after that line:
-
-   ```text
-   encrypted/** filter=git-crypt diff=git-crypt -text
-   encrypted/README.md !filter !diff text
-   .gitattributes !filter !diff
-   ```
-
-   If you use skills, add too, so a diff shows each generated copy as one line instead of its whole content (you review the original; the check keeps the copies identical):
-
-   ```text
-   .agents/skills/** -diff
-   .claude/skills/** -diff
-   ```
-
-5. Run `sh blueprint/scripts/rules.sh`, `sh blueprint/scripts/skills.sh` and `git config core.hooksPath blueprint/git-hooks`. The git hooks setting is not cloned, so repeat it on every machine; the check fails while it is off.
-6. `rules.sh` writes the rules into `AGENTS.md`, the file most agents (Codex, OpenCode and others) load by themselves at the start of a session, so every rule reaches them without depending on the agent choosing to read another file. Claude Code reads `CLAUDE.md` instead: add one with the line `@AGENTS.md`, which imports it. If you already had an `AGENTS.md`, move its content to `custom/rules/my-*.md`, because `rules.sh` overwrites it. Keep the rules short: Codex reads only the first 32 KiB by default.
+The rules end up in `AGENTS.md`, the file most agents (Codex, OpenCode and others) load by themselves at the start of a session, so every rule reaches them without depending on the agent choosing to read another file. Claude Code and Gemini CLI read their own file instead; the `CLAUDE.md` and `GEMINI.md` that `install.sh` creates only import `AGENTS.md`. Keep the rules short: Codex reads only the first 32 KiB by default.
 
 ## Customize without editing
 
@@ -76,7 +57,7 @@ Run `sh blueprint/scripts/check.sh` after any of these. For a guarantee that doe
 
 ## Update
 
-Because `blueprint/` is never edited in a copy, updating means replacing the whole folder with a newer version, then running `sh blueprint/scripts/rules.sh`, `sh blueprint/scripts/skills.sh` and `sh blueprint/scripts/check.sh`. Versions will be git tags, with a changelog that marks breaking changes: a renamed rule, folder or property.
+Because `blueprint/` is never edited in a copy, updating means replacing the whole folder with a newer version, then running `sh blueprint/scripts/install.sh`, which adds anything new the base needs and ends with the check. Versions will be git tags, with a changelog that marks breaking changes: a renamed rule, folder or property.
 
 ## Without git
 

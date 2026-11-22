@@ -63,11 +63,12 @@ if [ "$run_tests" = yes ]; then
     sh "$t" > /dev/null 2>&1 || fail "${t#"$base"/} fails"
   done
   if [ -n "${HITO_IN_TEST:-}" ] && [ -f "$HITO_IN_TEST/.hito-test-run" ]; then
-    echo "check: nested run inside test-check.sh; test-check.sh skipped" >&2
+    echo "check: nested run inside test-check.sh; test-check.sh and test-install.sh skipped" >&2
   elif [ "$have_git" = yes ]; then
     sh "$base/blueprint/scripts/test-check.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-check.sh fails"
+    sh "$base/blueprint/scripts/test-install.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-install.sh fails"
   else
-    echo "check: git is not installed; test-check.sh skipped" >&2
+    echo "check: git is not installed; test-check.sh and test-install.sh skipped" >&2
   fi
 fi
 
