@@ -5,12 +5,16 @@
 #   - the content folders, each with its README.md, plus README.md and CLAUDE.md at the root;
 #   - the lines .gitignore and .gitattributes need;
 #   - AGENTS.md and the skill copies;
+#   - your rules and skills for every folder (custom/global/), taken to each agent by global.sh;
 #   - core.hooksPath, so the git hooks run (it is not cloned, so each machine needs it);
 #   - the git-crypt lines for encrypted/, once git-crypt init has been run;
 # and ends with check.sh. Only the git-crypt key is left to the owner: it is theirs.
+#   install.sh        in a terminal, ask before adding a line to a file of yours outside it
+#   install.sh --yes  add it without asking
 set -u
 export LC_ALL=C
 
+case ${1:-} in ('' | --yes) ;; (*) echo "install: unknown option $1" >&2; exit 2 ;; esac
 root=$(cd "$(dirname "$0")/../.." && pwd -P)
 cd "$root" || exit 1
 say() { echo "install: $*"; }
@@ -46,6 +50,7 @@ Your changes to the shared base ([blueprint/](../blueprint/README.md)), without 
 - `rules/`: a file with the same name as a base rule replaces it; files named `my-*.md` are your own rules and go at the end.
 - `skills/`: your skills, one folder each with its `SKILL.md`; one with the name of a base skill replaces it, and yours are named `my-*`.
 - `disable`: one line `rules/<name>` or `skills/<name>` for each base rule or skill to leave out.
+- `global/rules/` and `global/skills/`: your own rules (`my-*.md`) and skills (`my-*`) for every folder, not only this repository. They reach each agent wherever it works, through `GLOBAL.md` and copies outside the repository.
 
 For example, to be answered in your language, save this as `rules/my-language.md`:
 
@@ -55,7 +60,7 @@ For example, to be answered in your language, save this as `rules/my-language.md
 Answer me in Spanish.
 ```
 
-After any change, run `sh blueprint/scripts/install.sh`: it regenerates [AGENTS.md](../AGENTS.md) and the skill copies, and runs the check.
+After any change, run `sh blueprint/scripts/install.sh`: it regenerates [AGENTS.md](../AGENTS.md), `GLOBAL.md` and the copies, and runs the check.
 EOF
   say "created custom/README.md"
 fi
@@ -98,9 +103,10 @@ for p in '.agents/skills/** -diff' '.claude/skills/** -diff'; do
   grep -qxF "$p" .gitattributes || { printf '%s\n' "$p" >> .gitattributes; say "added $p to .gitattributes"; }
 done
 
-# 4. AGENTS.md and the skill copies.
+# 4. AGENTS.md and the skill copies, and the rules and skills for every folder taken to each agent.
 sh blueprint/scripts/rules.sh || exit 1
 sh blueprint/scripts/skills.sh || exit 1
+sh blueprint/scripts/global.sh "$@" || exit 1
 
 # 5. The git hooks, if this is the top of a git repository.
 if command -v git > /dev/null 2>&1 && [ "$(git rev-parse --show-toplevel 2> /dev/null)" = "$root" ]; then

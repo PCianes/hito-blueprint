@@ -81,6 +81,16 @@ setup; skill "$r/custom/skills/beta" beta "Mine."; echo 'skills/beta' > "$r/cust
 setup; printf 'rules/x\r\nskills/beta\r\n' > "$r/custom/disable"; pass "reads skills lines among rules lines, with Windows line endings"
 absent "drops the skill named on that line" beta
 
+# skills for every folder: checked here, copied by global.sh, never into the repository
+setup; skill "$r/custom/global/skills/my-any" my-any "Anywhere."; pass "accepts a skill for every folder"
+absent "does not copy a skill for every folder into the repository" my-any
+pass "check passes with a skill for every folder" --check
+setup; skill "$r/custom/global/skills/notes" notes "x"; reject "rejects a skill for every folder not named my-*" "are your own, named my-*"
+setup; skill "$r/custom/global/skills/my-bad" my-other "x"; reject "rejects a skill for every folder whose name differs from its folder" "must say 'name: my-bad'"
+setup; mkdir -p "$r/custom/global/skills/my-empty"; reject "rejects a skill for every folder without SKILL.md" "has no SKILL.md"
+setup; mkdir -p "$r/custom/global/skills"; echo x > "$r/custom/global/skills/notes.txt"; reject "rejects a stray file in custom/global/skills" "is not a skill folder"
+setup; skill "$r/custom/global/skills/my-own" my-own "x"; skill "$r/custom/skills/my-own" my-own "y"; reject "rejects the same skill in custom/skills and custom/global/skills" "both in custom/skills and custom/global/skills"
+
 # --check
 setup; run; pass "check passes when the copies are current" --check
 echo edited >> "$r/.claude/skills/alpha/SKILL.md"; reject "check catches a hand edit in one copy" "out of date or was edited" --check

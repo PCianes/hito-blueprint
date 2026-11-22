@@ -10,6 +10,10 @@ for v in $(env | sed -n 's/^\(GIT_[A-Za-z0-9_]*\)=.*/\1/p'); do unset "$v"; done
 here=$(cd "$(dirname "$0")/../.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+# The git hooks run global.sh after each commit; a throwaway home keeps it off the real one.
+export HOME="$tmp/home"
+mkdir -p "$HOME"
+unset CLAUDE_CONFIG_DIR CODEX_HOME XDG_CONFIG_HOME
 touch "$tmp/.hito-test-run" # lets the nested check.sh skip this file, and nothing else does
 r="$tmp/r"
 passed=0

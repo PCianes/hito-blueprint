@@ -24,13 +24,13 @@ if [ "$have_git" = yes ] && [ "$(git rev-parse --show-toplevel 2> /dev/null)" = 
 fi
 
 # What the checks read: the working tree, or a copy of what the index holds for the base,
-# custom/, AGENTS.md and the skill copies. encrypted/ is never copied, so nothing is decrypted to disk.
+# custom/, AGENTS.md, GLOBAL.md and the skill copies. encrypted/ is never copied, so nothing is decrypted to disk.
 base=$root
 cached=
 if [ "$in_git" = yes ] && { [ "$mode" = --staged ] || [ "$mode" = --warn ]; }; then
   base=$(mktemp -d)
   trap 'rm -rf "$base"' EXIT
-  git ls-files -z -- AGENTS.md blueprint custom .agents/skills .claude/skills | git checkout-index -z --stdin --prefix="$base/"
+  git ls-files -z -- AGENTS.md GLOBAL.md blueprint custom .agents/skills .claude/skills | git checkout-index -z --stdin --prefix="$base/"
   cached=--cached
 fi
 # On disk, notes not yet added to git are read too (ignored files are not), so a manual run
@@ -58,6 +58,7 @@ fi
 if [ "$run_tests" = yes ]; then
   sh "$base/blueprint/scripts/test-rules.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-rules.sh fails"
   sh "$base/blueprint/scripts/test-skills.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-skills.sh fails"
+  sh "$base/blueprint/scripts/test-global.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-global.sh fails"
   for t in "$base"/custom/git-hooks/test-*.sh; do
     [ -e "$t" ] || continue
     sh "$t" > /dev/null 2>&1 || fail "${t#"$base"/} fails"
@@ -72,7 +73,7 @@ if [ "$run_tests" = yes ]; then
   fi
 fi
 
-# 2. AGENTS.md and the skill copies are current, and custom/ holds nothing the base would
+# 2. AGENTS.md, GLOBAL.md and the skill copies are current, and custom/ holds nothing the base would
 #    silently ignore.
 HITO_ROOT=$base sh "$base/blueprint/scripts/rules.sh" --check || status=1
 HITO_ROOT=$base sh "$base/blueprint/scripts/skills.sh" --check || status=1

@@ -75,5 +75,29 @@ echo edited >> "$r/AGENTS.md"; reject "check catches a hand edit" "out of date o
 setup; run; echo '## beta new' > "$r/blueprint/rules/beta.md"; reject "check catches a stale AGENTS.md" "out of date or was edited" --check
 setup; reject "check fails when AGENTS.md is missing" "AGENTS.md is missing" --check
 
+# Rules for every folder: GLOBAL.md, only while there are some, never mixed into AGENTS.md.
+gl() { mkdir -p "$r/custom/global/rules"; echo "$2" > "$r/custom/global/rules/$1"; }
+setup; pass "builds without rules for every folder"
+if [ -e "$r/GLOBAL.md" ]; then ko "writes no GLOBAL.md without rules for every folder"; else ok; fi
+setup; gl my-b.md '## global b'; gl my-a.md '## global a'; pass "builds with rules for every folder"
+if [ "$(grep '^## ' "$r/GLOBAL.md" | tr '\n' '|')" = "## global a|## global b|" ]; then ok; else ko "GLOBAL.md holds them in name order"; fi
+if grep -qF 'from `custom/global/rules/`. Do not edit by hand.' "$r/GLOBAL.md"; then ok; else ko "GLOBAL.md says it is generated"; fi
+lacks "keeps them out of AGENTS.md" "## global a"
+pass "check passes when GLOBAL.md is current" --check
+echo edited >> "$r/GLOBAL.md"; reject "check catches a hand edit of GLOBAL.md" "GLOBAL.md is out of date or was edited" --check
+run; gl my-a.md '## global a changed'; reject "check catches a stale GLOBAL.md" "GLOBAL.md is out of date or was edited" --check
+rm "$r/GLOBAL.md"; reject "check fails when GLOBAL.md is missing" "GLOBAL.md is missing" --check
+run; rm -r "$r/custom/global/rules"; reject "check catches a GLOBAL.md left over" "GLOBAL.md comes from no rule" --check
+pass "removes GLOBAL.md once no rule is left"
+if [ -e "$r/GLOBAL.md" ]; then ko "GLOBAL.md is gone"; else ok; fi
+setup; gl links.md x; reject "rejects a rule for every folder not named my-*" "are your own, named my-*.md"
+setup; gl my-x.txt x; reject "rejects a stray file in custom/global/rules" "not something the base reads"
+setup; mkdir -p "$r/custom/global/rules/my-sub.md"; reject "rejects a folder named like a rule in custom/global/rules" "not something the base reads"
+setup; mkdir -p "$r/custom/global/hooks"; reject "rejects an unknown entry in custom/global" "not something the base reads"
+setup; gl my-x.md x; echo y > "$r/custom/rules/my-x.md"; reject "rejects the same rule in custom/rules and custom/global/rules" "both in custom/rules and custom/global/rules"
+setup; gl my-x.md x; mkdir -p "$r/custom/global/skills"; touch "$r/custom/global/.DS_Store" "$r/custom/global/rules/.DS_Store"; pass "accepts what custom/global holds, and .DS_Store"
+setup; printf '## global crlf\r\n' > "$r/x"; mkdir -p "$r/custom/global/rules"; mv "$r/x" "$r/custom/global/rules/my-c.md"; pass "builds from a rule for every folder with Windows line endings"
+if grep -qxF '## global crlf' "$r/GLOBAL.md"; then ok; else ko "drops the carriage returns in GLOBAL.md"; fi
+
 echo "rules.sh: $passed passed, $failed failed"
 [ "$failed" -eq 0 ]

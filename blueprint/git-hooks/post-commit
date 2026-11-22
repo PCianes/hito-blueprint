@@ -1,4 +1,8 @@
 #!/bin/sh
 # Enabled with: git config core.hooksPath blueprint/git-hooks
-# git cannot block cherry-pick, rebase or fast-forward merges; this warns afterwards instead.
-exec sh "$(git rev-parse --show-toplevel)/blueprint/scripts/check.sh" --warn
+# Brings the copies of the rules and skills for every folder up to date outside the repository
+# (they are not in git, so they can follow what was just committed). Then, since git cannot
+# block cherry-pick, rebase or fast-forward merges, warns afterwards if the checks now fail.
+top=$(git rev-parse --show-toplevel)
+sh "$top/blueprint/scripts/global.sh" --no-ask
+exec sh "$top/blueprint/scripts/check.sh" --warn

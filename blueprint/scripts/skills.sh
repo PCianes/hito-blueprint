@@ -2,6 +2,8 @@
 # Builds the skills agents read from blueprint/skills and custom/skills, and copies them to
 # every folder where an agent looks for them: .agents/skills (Codex, OpenCode) and
 # .claude/skills (Claude Code). Copies rather than links, so they work on any system.
+# It also checks the owner's skills for every folder in custom/global/skills, which global.sh
+# copies outside the repository, not here.
 #   skills.sh          write them
 #   skills.sh --check  fail if the copies differ from what would be written
 set -eu
@@ -10,6 +12,7 @@ export LC_ALL=C
 root=${HITO_ROOT:-$(cd "$(dirname "$0")/../.." && pwd)}
 base="$root/blueprint/skills"
 custom="$root/custom/skills"
+global="$root/custom/global/skills"
 disable="$root/custom/disable"
 targets=".agents/skills .claude/skills"
 
@@ -48,6 +51,15 @@ for n in $custom_names; do
   validate "$custom/$n"
   case $n in my-*) continue ;; esac
   in_base "$n" || fail "custom/skills/$n replaces no base skill (own skills are named my-*)"
+done
+
+# Skills for every folder are the owner's own, and their names must not clash with a skill
+# the agents also find in the repository.
+global_names=$(names_in "$global")
+for n in $global_names; do
+  validate "$global/$n"
+  case $n in my-*) ;; (*) fail "custom/global/skills/$n: skills for every folder are your own, named my-*" ;; esac
+  [ ! -d "$custom/$n" ] || fail "skill '$n' is both in custom/skills and custom/global/skills"
 done
 
 # Disabled base skills must exist and must not also be replaced.

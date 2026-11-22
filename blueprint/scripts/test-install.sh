@@ -9,6 +9,10 @@ export LC_ALL=C
 src=$(cd "$(dirname "$0")/.." && pwd -P)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
+# The git hooks run global.sh after each commit; a throwaway home keeps it off the real one.
+export HOME="$tmp/home"
+mkdir -p "$HOME"
+unset CLAUDE_CONFIG_DIR CODEX_HOME XDG_CONFIG_HOME
 r="$tmp/r"
 passed=0
 failed=0
@@ -22,8 +26,8 @@ setup() { # an empty repository with blueprint/ copied in
   git -C "$r" init -q
   git -C "$r" config user.name test; git -C "$r" config user.email test@example.com
 }
-run() { (cd "$r" && sh blueprint/scripts/install.sh) > "$tmp/out" 2>&1; }
-pass() { if run; then ok; else ko "$1: $(cat "$tmp/out")"; fi; }
+run() { (cd "$r" && sh blueprint/scripts/install.sh "$@") < /dev/null > "$tmp/out" 2>&1; }
+pass() { d=$1; shift; if run "$@"; then ok; else ko "$d: $(cat "$tmp/out")"; fi; }
 has() { if grep -qxF "$3" "$r/$2"; then ok; else ko "$1"; fi; }
 snapshot() { (cd "$r" && find . -path ./.git -prune -o -type f -print | sort | xargs cksum; git config core.hooksPath); }
 
@@ -81,6 +85,28 @@ setup; mkdir -p "$r/knowledge"; echo 'no frontmatter' > "$r/knowledge/x.md"
 if run; then ko "ends with the check, which fails on a note without frontmatter"
 elif grep -qF 'knowledge/x.md' "$tmp/out"; then ok
 else ko "fails for the note, not another reason: $(cat "$tmp/out")"; fi
+
+# Rules for every folder reach the agents installed in this (throwaway) home.
+setup; mkdir -p "$HOME/.claude" "$r/custom/global/rules"; echo '## Anywhere' > "$r/custom/global/rules/my-any.md"
+pass "takes the rules for every folder to the agents"
+line="@$(cd "$r" && pwd -P)/GLOBAL.md"
+if [ "$(cat "$HOME/.claude/CLAUDE.md")" = "$line" ]; then ok; else ko "Claude Code imports GLOBAL.md: $(cat "$HOME/.claude/CLAUDE.md")"; fi
+if grep -qxF '## Anywhere' "$r/GLOBAL.md"; then ok; else ko "generates GLOBAL.md"; fi
+git -C "$r" add -A
+if git -C "$r" commit -qm "feat: start" > "$tmp/out" 2>&1; then ok; else ko "GLOBAL.md can be committed through the git hooks: $(cat "$tmp/out")"; fi
+pass "runs again with rules for every folder"
+if grep -q '^global: ' "$tmp/out"; then ko "running again leaves the agents as they were: $(cat "$tmp/out")"; else ok; fi
+mkdir -p "$HOME/.codex"; echo '## Changed' > "$r/custom/global/rules/my-any.md"; (cd "$r" && sh blueprint/scripts/rules.sh)
+git -C "$r" add -A; git -C "$r" commit -qm "docs: change a rule" > /dev/null 2>&1
+if grep -qxF '## Changed' "$HOME/.codex/AGENTS.md" 2> /dev/null; then ok; else ko "the git hook after a commit brings the copies up to date"; fi
+rm -rf "$HOME/.codex"
+setup; mkdir -p "$r/custom/global/rules"; echo '## Anywhere' > "$r/custom/global/rules/my-any.md"; echo '# Mine' > "$HOME/.claude/CLAUDE.md"
+pass "meets a CLAUDE.md of the owner's"
+if [ "$(cat "$HOME/.claude/CLAUDE.md")" = '# Mine' ] && grep -qF 'add this line at the end' "$tmp/out"; then ok; else ko "asks before changing it, and says what to add"; fi
+pass "adds the line when told yes" --yes
+if grep -qxF "@$(cd "$r" && pwd -P)/GLOBAL.md" "$HOME/.claude/CLAUDE.md"; then ok; else ko "--yes reaches global.sh"; fi
+rm -rf "$HOME/.claude"
+setup; if run --everything; then ko "rejects an unknown option"; else ok; fi
 
 # The folders it creates are the content folders of the Folders rule.
 rule=$(sed -n 's/^| `\([a-z]*\)\/` |.*/\1/p' "$src/rules/folders.md" | grep -vx -e blueprint -e custom | tr '\n' ' ')
