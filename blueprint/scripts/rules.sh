@@ -1,6 +1,7 @@
 #!/bin/sh
 # Builds AGENTS.md from blueprint/rules and custom/rules, and GLOBAL.md from the owner's rules
-# for every folder in custom/global/rules (global.sh takes it to each agent).
+# for every folder in custom/global/rules (global.sh takes it to each agent). Those rules also go
+# at the end of AGENTS.md, so they hold here wherever the repository is opened.
 #   rules.sh          write AGENTS.md and GLOBAL.md
 #   rules.sh --check  fail if either differs from what would be written
 set -eu
@@ -63,11 +64,12 @@ for f in "$gcustom"/* "$gcustom"/.[!.]* "$gcustom"/..?*; do
   [ -e "$f" ] || continue
   case ${f##*/} in
     (.markdownlint-cli2.yaml | .DS_Store) ;;
-    (my-*.md) [ -f "$f" ] || unknown "custom/global/rules/${f##*/}" ;;
+    (my-*.md)
+      [ -f "$f" ] || unknown "custom/global/rules/${f##*/}"
+      [ ! -f "$custom/${f##*/}" ] || fail "rule '${f##*/}' is both in custom/rules and custom/global/rules" ;;
     (*.md) fail "custom/global/rules/${f##*/}: rules for every folder are your own, named my-*.md" ;;
     (*) unknown "custom/global/rules/${f##*/}" ;;
   esac
-  [ ! -f "$custom/${f##*/}" ] || fail "rule '${f##*/}' is both in custom/rules and custom/global/rules"
 done
 for f in "$root"/custom/git-hooks/* "$root"/custom/git-hooks/.[!.]* "$root"/custom/git-hooks/..?*; do
   [ -e "$f" ] || continue
@@ -120,6 +122,13 @@ render() {
     if [ -f "$custom/$n.md" ]; then tr -d '\r' < "$custom/$n.md"; else tr -d '\r' < "$base/$n.md"; fi
   done
   for f in "$custom"/my-*.md; do
+    [ -e "$f" ] || continue
+    echo
+    tr -d '\r' < "$f"
+  done
+  # The rules for every folder too, so they hold here even where global.sh has not run (a clone,
+  # a session in the cloud). Where it has, an agent opened here reads them twice, with the same text.
+  for f in "$gcustom"/my-*.md; do
     [ -e "$f" ] || continue
     echo
     tr -d '\r' < "$f"
