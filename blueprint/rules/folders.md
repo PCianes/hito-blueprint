@@ -18,4 +18,6 @@ A folder exists only if (a) deciding whether a note belongs there is a question 
 
 Inside each folder the same test applies: a subfolder exists only if placing a note in it is a question of fact, such as a project, the year of a journal day, the author or channel of a source, or one source made of several files. Topics are not facts, so `knowledge/` stays flat; links and each folder's `README.md` organize it.
 
+A project with code keeps here its tasks, decisions and notes. How its code works (running it, testing it, deploying it) goes, briefly, in that repository's own `AGENTS.md`, so any agent working there sees it, even where this repository is not. What holds for several repositories goes where Customizing says.
+
 "Agents propose" means an agent may draft, and the owner decides what stays.
