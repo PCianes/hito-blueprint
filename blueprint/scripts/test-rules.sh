@@ -103,5 +103,11 @@ setup; printf '## global crlf\r\n' > "$r/x"; mkdir -p "$r/custom/global/rules"; 
 if grep -qxF '## global crlf' "$r/GLOBAL.md"; then ok; else ko "drops the carriage returns in GLOBAL.md"; fi
 has "drops them in AGENTS.md too" '## global crlf'
 
+# Templates: the owner's replace the base ones with their name; nothing else goes there.
+setup; mkdir -p "$r/blueprint/templates" "$r/custom/templates"; echo base > "$r/blueprint/templates/journal.md"
+echo mine > "$r/custom/templates/journal.md"; touch "$r/custom/templates/.DS_Store"; pass "accepts a template that replaces a base one"
+echo x > "$r/custom/templates/weekly.md"; reject "rejects a template that replaces none" "custom/templates/weekly.md replaces no base template"
+rm "$r/custom/templates/weekly.md"; mkdir "$r/custom/templates/journal"; reject "rejects a folder in custom/templates" "replaces no base template"
+
 echo "rules.sh: $passed passed, $failed failed"
 [ "$failed" -eq 0 ]

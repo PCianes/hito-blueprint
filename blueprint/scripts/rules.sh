@@ -39,7 +39,7 @@ if [ -d "$root/custom" ]; then
   for f in "$root"/custom/* "$root"/custom/.[!.]* "$root"/custom/..?*; do
     [ -e "$f" ] || continue
     case ${f##*/} in
-      (README.md | rules | skills | git-hooks | disable | global | .DS_Store) ;;
+      (README.md | rules | skills | templates | git-hooks | disable | global | .DS_Store) ;;
       (*) unknown "custom/${f##*/}" ;;
     esac
   done
@@ -69,6 +69,15 @@ for f in "$gcustom"/* "$gcustom"/.[!.]* "$gcustom"/..?*; do
       [ ! -f "$custom/${f##*/}" ] || fail "rule '${f##*/}' is both in custom/rules and custom/global/rules" ;;
     (*.md) fail "custom/global/rules/${f##*/}: rules for every folder are your own, named my-*.md" ;;
     (*) unknown "custom/global/rules/${f##*/}" ;;
+  esac
+done
+# A template in custom/templates replaces the base one with its name; there is nothing else to add.
+for f in "$root"/custom/templates/* "$root"/custom/templates/.[!.]* "$root"/custom/templates/..?*; do
+  [ -e "$f" ] || continue
+  case ${f##*/} in
+    (.DS_Store) ;;
+    (*) [ -f "$f" ] && [ -f "$root/blueprint/templates/${f##*/}" ] ||
+      fail "custom/templates/${f##*/} replaces no base template in blueprint/templates" ;;
   esac
 done
 for f in "$root"/custom/git-hooks/* "$root"/custom/git-hooks/.[!.]* "$root"/custom/git-hooks/..?*; do
