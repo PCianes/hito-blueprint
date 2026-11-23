@@ -7,4 +7,4 @@ Every note in the content folders (all of them except `blueprint/` and `custom/`
 - In `knowledge/`: `knowledge` is what you understood about a subject; `model` holds across subjects, and there are few of them.
 - Elsewhere, the folder's kind: `inbox`, `goal`, `source`, `journal`. Notes in `encrypted/` take the type they would have outside it, and notes in `archive/` the type they had before.
 
-Tasks are `- [ ]` items in their project's `README.md`. The journal links to them and never copies them.
+Tasks are `- [ ]` items in their project's `README.md`. The journal links to them and never copies them. When work changes a project, update its README.md in the same change: tick what is done, add what came up, and fix what is no longer true. Ticked tasks may be deleted once they no longer help; git keeps them.
