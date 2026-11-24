@@ -60,6 +60,7 @@ if [ "$run_tests" = yes ]; then
   sh "$base/blueprint/scripts/test-skills.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-skills.sh fails"
   sh "$base/blueprint/scripts/test-global.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-global.sh fails"
   sh "$base/blueprint/scripts/test-today.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-today.sh fails"
+  sh "$base/blueprint/scripts/test-update.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-update.sh fails"
   for t in "$base"/custom/git-hooks/test-*.sh; do
     [ -e "$t" ] || continue
     sh "$t" > /dev/null 2>&1 || fail "${t#"$base"/} fails"

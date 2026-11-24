@@ -1,0 +1,5 @@
+# Base rules and skills to leave out, one per line: rules/<name> or skills/<name>.
+# The file stays in blueprint/, untouched, but no longer reaches the agents, and an
+# update cannot bring it back. Lines starting with # are ignored. For example:
+# rules/links
+# skills/<name>

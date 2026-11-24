@@ -1,6 +1,6 @@
 ## Customizing
 
-`blueprint/` is shared by every copy. Improvements that would help every copy are made in the base itself, where it is developed. Changes for one person never go in `blueprint/`; they go in `custom/`:
+`blueprint/` is shared by every copy. Improvements that would help every copy are made in the base itself, where it is developed. That is the repository `hito-blueprint`: working there, read its `DEVELOPING.md` first. Changes for one person never go in `blueprint/`; they go in `custom/`:
 
 - a file in `custom/rules/` with the same name as a base rule replaces it (`custom/rules/links.md` replaces `blueprint/rules/links.md`);
 - your own rules are files named `my-*.md` in `custom/rules/`;
