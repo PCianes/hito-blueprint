@@ -25,7 +25,7 @@ The blueprint is the plan every copy is built from: the rules, skills, scripts a
 - **Checks that stop mistakes.** git hooks run a check before every commit: every note has its type and date, every link points somewhere, no secret file is ever committed, and, once you set up git-crypt, everything in the sensitive folder is encrypted.
 - **A base you can update.** The shared part lives in `blueprint/`, and your changes live in `custom/`. Updating replaces `blueprint/` whole, so there is nothing to merge, and your repository never gets a link back to this one.
 
-It needs only POSIX `sh` and git (on Windows, Git Bash): no app, no server, no database, no account. Everything is local-first and works offline. The base is in English; write your notes in any language.
+It needs only POSIX `sh` (the basic shell that comes with macOS and Linux; on Windows, Git Bash) and git: no app, no server, no database, no account. Everything is local-first and works offline. The base is in English; write your notes in any language.
 
 ## Who it is for
 
@@ -38,7 +38,7 @@ On privacy: your notes live in your own private repository, and secrets (keys, t
 1. Create your repository from this template ("Use this template", and make it private), or with the GitHub CLI: `gh repo create my-notes --template PCianes/hito-blueprint --private --clone`. Without a GitHub account, download a version (a tag's zip on GitHub), copy its `blueprint/` into an empty folder and run `git init` there.
 2. In your clone, run `sh blueprint/scripts/install.sh`. Run it again on every machine where you clone it, because git does not clone the setting that turns on the git hooks.
 3. Optional, for `encrypted/`: run `git-crypt init`, keep the key outside the repository, and run `install.sh` again.
-4. Replace the text of this file with your own presentation, keeping its frontmatter; it is yours now.
+4. Replace the text of this file with your own presentation, keeping its frontmatter; it is yours now. `DEVELOPING.md`, `dev/` and `.github/` are for developing the base and do nothing in your copy, so you can delete them.
 
 How everything works, and how to change it without editing the base, is in [blueprint/](blueprint/README.md).
 
@@ -46,7 +46,7 @@ How everything works, and how to change it without editing the base, is in [blue
 
 hito is not used by forking or by pulling from this repository. Your copy is a repository of your own, with no link to this one, so your notes can never be pushed here by mistake. New versions arrive by vendoring, the way shadcn/ui hands you its components: the files of the base are copied into your repository, and you commit them like any change of yours.
 
-Run `sh blueprint/scripts/update.sh` for the latest version, or `update.sh v0.3` for a given one. It replaces `blueprint/` and runs `install.sh`; review the result with `git diff` and commit it. Versions are git tags such as `v0.1`, and `blueprint/VERSION` says which one your copy has. hito is young: until v1.0, a version may rename a rule, a folder or a property.
+Run `sh blueprint/scripts/update.sh` for the latest version, or `update.sh v0.3` for a given one. It replaces `blueprint/`, runs `install.sh` and shows what changed since your version; review the result with `git diff` and commit it. The check stops any edit to `blueprint/` in your copy, since an update would undo it; your changes go in `custom/`. Versions are git tags such as `v0.1`, and `blueprint/VERSION` says which one your copy has. hito is young: until v1.0, a version may rename a rule, a folder or a property.
 
 ## Folders
 

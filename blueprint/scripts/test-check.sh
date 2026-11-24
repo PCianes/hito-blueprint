@@ -38,10 +38,15 @@ attributes() {
   printf '%s\n' '* text=auto eol=lf' 'encrypted/** filter=git-crypt diff=git-crypt -text' \
     'encrypted/README.md !filter !diff text' '.gitattributes !filter !diff'
 }
-setup() { # a minimal valid repository with the git hooks on
+# A copy carries the fingerprint of its blueprint/; this one is taken from what is on disk, as
+# where the base is developed (only there may --manifest run), without leaving that setting.
+fingerprint() { (cd "$r" && GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=hito.develop GIT_CONFIG_VALUE_0=true sh blueprint/scripts/check.sh --manifest > "$tmp/manifest" && mv "$tmp/manifest" blueprint/MANIFEST); }
+develop() { git -C "$r" config hito.develop true; } # as where the base is developed
+setup() { # a minimal valid copy with the git hooks on
   rm -rf "$r"
   mkdir -p "$r/encrypted"
   cp -R "$here/blueprint" "$r/blueprint"
+  fingerprint
   printf -- "---\ntype: index\ncreated: 2026-01-01\n---\n\n# encrypted\n" > "$r/encrypted/README.md"
   attributes > "$r/.gitattributes"
   (cd "$r" && sh blueprint/scripts/rules.sh)
@@ -58,8 +63,8 @@ setup; stage_blob 'secret\n' encrypted/plain.md
 reject "stops a file stored in clear in encrypted/" "not encrypted" --staged
 setup; stage_blob '\000GITCRYPT\000ciphertext' encrypted/sealed.md
 pass "accepts a git-crypt blob in encrypted/" --staged
-setup; stage_blob '\000GITCRYPT\000ciphertext' 'encrypted/salud-año.md'
-pass "accepts a git-crypt blob whose name has an ñ" --staged
+setup; stage_blob '\000GITCRYPT\000ciphertext' 'encrypted/naïve.md'
+pass "accepts a git-crypt blob whose name is not ASCII" --staged
 setup; stage_blob 'secret\n' Encrypted/plain.md
 reject "stops a file in clear in Encrypted/, with a capital letter" "not encrypted" --staged
 setup; stage_blob '\000GITCRYPT\000ciphertext' encrypted/sealed.md
@@ -156,7 +161,7 @@ reject "moving a project to archive/ shows the links to it it broke" "projects/R
 reject "and the links in it it broke" "archive/projects/talk/README.md:7: ../README.md" --staged
 
 # skills, as the commit will carry them
-setup; mkdir -p "$r/blueprint/skills/demo"; printf -- '---\nname: demo\ndescription: Demo.\n---\n' > "$r/blueprint/skills/demo/SKILL.md"; git -C "$r" add -A
+setup; mkdir -p "$r/blueprint/skills/demo"; printf -- '---\nname: demo\ndescription: Demo.\n---\n' > "$r/blueprint/skills/demo/SKILL.md"; fingerprint; git -C "$r" add -A
 reject "stops a skill whose copies were not generated" "is missing" --staged
 (cd "$r" && sh blueprint/scripts/skills.sh); git -C "$r" add -A; pass "passes once the copies are generated and staged" --staged
 echo edited >> "$r/.claude/skills/demo/SKILL.md"; git -C "$r" add -A
@@ -173,15 +178,16 @@ setup; grep -v 'eol=lf' "$r/.gitattributes" > "$tmp/a"; cp "$tmp/a" "$r/.gitattr
 reject "stops scripts without eol=lf" "needs 'eol=lf'" --staged
 
 # the tests cannot be skipped by accident
-setup; printf 'exit 1\n' > "$r/blueprint/scripts/test-check.sh"; git -C "$r" add -A
+setup; develop; printf 'exit 1\n' > "$r/blueprint/scripts/test-check.sh"; git -C "$r" add -A
 if out=$(cd "$r" && HITO_IN_TEST=/nowhere sh blueprint/scripts/check.sh --staged 2>&1 > /dev/null); then
   ko "a stray HITO_IN_TEST skips test-check.sh (passed)"
 elif printf '%s\n' "$out" | grep -qF "test-check.sh fails"; then ok
 else ko "a stray HITO_IN_TEST: failed for another reason: $out"; fi
 
-# the tests of the scripts run only when the commit touches the scripts or git hooks
-setup; gc() { git -C "$r" -c user.name=T -c user.email=t@e.c commit -q --no-verify "$@" > /dev/null 2>&1; }
-gc -m base; printf 'exit 1\n' > "$r/blueprint/scripts/test-rules.sh"; git -C "$r" add -A; gc -m "broken tests"
+# where the base is developed, the tests of the scripts run only when the commit touches the
+# scripts or git hooks
+setup; develop; gc() { git -C "$r" -c user.name=T -c user.email=t@e.c commit -q --no-verify "$@" > /dev/null 2>&1; }
+gc -m base; printf 'exit 1\n' > "$r/blueprint/scripts/test-rules.sh"; fingerprint; git -C "$r" add -A; gc -m "broken tests"
 echo nota > "$r/note.md"; git -C "$r" add note.md
 pass "a commit that does not touch the scripts skips their tests" --staged
 echo "# touched" >> "$r/blueprint/scripts/rules.sh"; git -C "$r" add -A
@@ -191,6 +197,65 @@ echo "* text=auto" >> "$r/.gitattributes"; git -C "$r" add .gitattributes
 reject "a commit that touches .gitattributes runs the tests too" "test-rules.sh fails" --staged
 git -C "$r" reset -q -- .gitattributes; git -C "$r" checkout -q -- .gitattributes
 reject "a manual run always runs the tests" "test-rules.sh fails"
+
+# in a copy, blueprint/ is the published version, and the tests of the base never run there
+setup; echo "# edited" >> "$r/blueprint/scripts/today.sh"; git -C "$r" add -A
+reject "stops an edit to blueprint/ in a copy" "blueprint/ is not the published version" --staged
+reject "and names the file" "blueprint/scripts/today.sh" --staged
+reject "and stops it on disk too" "blueprint/ is not the published version"
+setup; echo extra > "$r/blueprint/extra.txt"; git -C "$r" add -A
+reject "stops a file added to blueprint/ in a copy" "blueprint/extra.txt" --staged
+setup; git -C "$r" rm -qf blueprint/scripts/today.sh
+reject "stops a file removed from blueprint/ in a copy" "blueprint/scripts/today.sh" --staged
+setup; git -C "$r" rm -qf blueprint/MANIFEST
+reject "stops a copy without blueprint/MANIFEST" "blueprint/MANIFEST is missing" --staged
+setup; echo "# edited" >> "$r/blueprint/scripts/today.sh"; git -C "$r" add -A; git -C "$r" config hito.develop false
+reject "hito.develop set to false is a copy" "blueprint/ is not the published version" --staged
+setup; develop; echo "# edited" >> "$r/blueprint/scripts/today.sh"; fingerprint; git -C "$r" add -A
+pass "where the base is developed, blueprint/ may be edited, with its MANIFEST written again" --staged
+setup; develop; echo "# edited" >> "$r/blueprint/scripts/today.sh"; git -C "$r" add -A
+reject "where the base is developed, an out-of-date MANIFEST is stopped" "blueprint/MANIFEST is out of date" --staged
+reject "and names the file" "blueprint/scripts/today.sh" --staged
+setup; develop; git -C "$r" rm -qf blueprint/MANIFEST
+reject "where the base is developed, a missing MANIFEST is stopped" "write it with: sh blueprint/scripts/check.sh --manifest" --staged
+setup
+if (cd "$r" && sh blueprint/scripts/check.sh --manifest > /dev/null 2>&1); then ko "a copy cannot write its own MANIFEST (it could)"; else ok; fi
+develop
+if (cd "$r" && sh blueprint/scripts/check.sh --manifest | grep -q ' scripts/check\.sh$'); then ok; else ko "where the base is developed, --manifest prints the fingerprint"; fi
+setup; printf '.DS_Store\n' > "$r/.gitignore"; touch "$r/blueprint/.DS_Store"
+pass "ignores files git ignores in blueprint/"
+setup; printf 'exit 1\n' > "$r/blueprint/scripts/test-rules.sh"; fingerprint; git -C "$r" add -A
+pass "a copy never runs the tests of the base" --staged
+pass "not even by hand"
+mkdir -p "$r/custom/git-hooks"; printf 'exit 1\n' > "$r/custom/git-hooks/test-mine.sh"; git -C "$r" add -A
+reject "a copy still runs the owner's own tests" "custom/git-hooks/test-mine.sh fails" --staged
+setup; rm -rf "$r/.git"; echo "# edited" >> "$r/blueprint/scripts/today.sh"
+reject "stops an edit to blueprint/ without git" "blueprint/ is not the published version"
+
+# where the base is developed, nothing personal reaches it
+spanish() { setup; develop; git -C "$r" -c user.name=T -c user.email=t@e.c commit -q --no-verify -m base; }
+spanish; echo "El tren sale de la ciudad" >> "$r/README.md"; git -C "$r" add -A
+reject "stops a line in Spanish (by two common words) where the base is developed" "must not reach the public base" --staged
+spanish; echo "the year: año" >> "$r/README.md"; git -C "$r" add -A
+reject "stops a Spanish letter" "año" --staged
+spanish; u=Users; echo "see /$u/someone/notes" >> "$r/README.md"; git -C "$r" add -A
+reject "stops a home folder path" "/$u/someone" --staged
+spanish; echo "dir=/$u/someone/x" > "$r/blueprint/example.sh"; git -C "$r" add -A
+reject "stops a home folder path in a script too" "dir=/$u/someone" --staged
+spanish; m="someone@gm""ail.com"; echo "write to $m" >> "$r/README.md"; git -C "$r" add -A
+reject "stops a personal email address" "$m" --staged
+spanish; mkdir -p "$r/knowledge"; printf -- '---\ntype: knowledge\ncreated: 2026-01-01\n---\n\nx\n' > "$r/knowledge/canción.md"; git -C "$r" add -A
+reject "stops a file name in Spanish" "canción.md" --staged
+spanish; printf '%s\n' "Sign with 1+x@users.noreply.github.com or test@example.com" "Los Angeles, a place" "a naïve reader" >> "$r/README.md"; printf 'printf "a\\n@AGENTS.md\\n"\n# El tren sale de la ciudad\n' > "$r/blueprint/example.sh"; fingerprint; git -C "$r" add -A
+pass "accepts English, noreply and example addresses, one common Spanish word alone, a @file, and Spanish in a script" --staged
+setup; echo "El tren sale de la ciudad" >> "$r/README.md"; git -C "$r" add -A
+pass "in a copy, notes in Spanish are fine" --staged
+printf 'docs: notas de la semana\n' > "$tmp/msg"
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg"); then ok; else ko "in a copy, a commit message in Spanish is fine"; fi
+develop
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg" 2> /dev/null); then ko "where the base is developed, commit-msg stops a message in Spanish"; else ok; fi
+printf 'docs: notes for today\n# Por favor, escribe el mensaje para los cambios\n' > "$tmp/msg"
+if (cd "$r" && sh blueprint/git-hooks/commit-msg "$tmp/msg"); then ok; else ko "commit-msg skips the comment lines git strips"; fi
 
 # --warn: after operations git cannot block, it warns and never fails
 setup; stage_blob 'secret\n' .env

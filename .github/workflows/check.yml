@@ -1,0 +1,33 @@
+# Runs only in hito-blueprint, where the base is developed: in your copy it never runs, and you
+# can delete the .github/ folder.
+# On every push: the full check, with every test of the base, and the rehearsal (dev/rehearse.sh),
+# on Linux and macOS. On a version tag, it also proves the tag matches blueprint/VERSION.
+name: check
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  check:
+    if: github.repository == 'PCianes/hito-blueprint'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install git-crypt
+        run: if command -v brew > /dev/null; then brew install git-crypt; else sudo apt-get install -y git-crypt; fi
+      - name: Set up as where the base is developed
+        run: |
+          git config core.hooksPath blueprint/git-hooks
+          git config hito.develop true
+      - name: Check, with every test
+        run: sh blueprint/scripts/check.sh
+      - name: Rehearse
+        run: sh dev/rehearse.sh
+      - name: The tag matches blueprint/VERSION
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: test "$(cat blueprint/VERSION)" = "${GITHUB_REF_NAME}"

@@ -1,8 +1,8 @@
 #!/bin/sh
 # Proves install.sh: it sets up an empty repository that passes the check, changes nothing
 # when run again, never overwrites what exists, and repairs what is missing.
-# The copies get stub tests, so the check that install.sh runs at the end does not run this
-# file again; every other check is real.
+# Each copy carries the fingerprint of what was copied, as a published version does, so the
+# check that install.sh runs treats it as a copy and does not run the tests of the base.
 set -u
 export LC_ALL=C
 
@@ -22,7 +22,7 @@ ko() { failed=$((failed + 1)); echo "FAIL: $1" >&2; }
 setup() { # an empty repository with blueprint/ copied in
   rm -rf "$r"; mkdir -p "$r"
   cp -R "$src" "$r/blueprint"
-  for t in "$r"/blueprint/scripts/test-*.sh; do echo 'exit 0' > "$t"; done
+  (cd "$r" && sh blueprint/scripts/check.sh --manifest > "$tmp/manifest") && mv "$tmp/manifest" "$r/blueprint/MANIFEST"
   git -C "$r" init -q
   git -C "$r" config user.name test; git -C "$r" config user.email test@example.com
 }

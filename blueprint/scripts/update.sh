@@ -36,6 +36,8 @@ git clone -q --depth 1 --branch "$tag" "$url" "$tmp/base" 2> /dev/null || fail "
 [ "$(cat "$tmp/base/blueprint/VERSION" 2> /dev/null)" = "$tag" ] || fail "$tag says it is version '$(cat "$tmp/base/blueprint/VERSION" 2> /dev/null)'"
 rm -rf "$root/blueprint" && cp -R "$tmp/base/blueprint" "$root/blueprint" || fail "could not replace blueprint/; restore it with: git checkout -- blueprint"
 echo "update: blueprint/ is now $tag${now:+ (was $now)}; review it with git diff, then commit"
+# What changed since the old version, from the new CHANGELOG.md: every section above the old one.
+[ ! -f "$root/blueprint/CHANGELOG.md" ] || awk -v old="$now" '/^## v/ { if ($2 == old) exit; p = 1 } p' "$root/blueprint/CHANGELOG.md"
 sh "$root/blueprint/scripts/install.sh"
 exit $?
 }

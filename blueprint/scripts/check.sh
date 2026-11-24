@@ -5,6 +5,7 @@
 #   check.sh --warn    after cherry-pick, rebase or a fast-forward merge, which git gives no
 #                      blocking hook for: check what is now committed, skip the tests, and
 #                      print a warning with how to undo instead of failing
+#   check.sh --manifest  print the fingerprint of blueprint/, for blueprint/MANIFEST, and nothing else
 # Without git, only the checks that do not need it run, and it says what it skipped.
 set -u
 export LC_ALL=C
@@ -39,6 +40,89 @@ untracked=
 others=
 if [ "$in_git" = yes ] && [ -z "$cached" ]; then untracked=--untracked; others="--others --exclude-standard"; fi
 
+# The fingerprint of the base: one cksum line per file of blueprint/, blueprint/MANIFEST aside.
+# On disk it reads the files git would track (ignored ones such as .DS_Store are not); before a
+# commit, the copy of what the commit carries.
+manifest() {
+  if [ "$in_git" = yes ] && [ -z "$cached" ]; then
+    git -c core.quotePath=false ls-files --cached --others --exclude-standard -- blueprint | sed 's|^blueprint/||'
+  else
+    (cd "$base/blueprint" && find . -type f | sed 's|^\./||')
+  fi | grep -vx MANIFEST | sort -u | while IFS= read -r f; do
+    [ -f "$base/blueprint/$f" ] && (cd "$base/blueprint" && cksum "$f")
+  done
+}
+
+# Where the base is developed, blueprint/ is edited, and the local setting hito.develop says so;
+# git never clones it and the template never copies it, so no copy inherits it.
+develop=no
+if [ "$in_git" = yes ] && [ "$(git config --bool hito.develop 2> /dev/null)" = true ]; then develop=yes; fi
+# A copy never writes its own fingerprint: that would hide an edit to blueprint/ from the check.
+if [ "$mode" = --manifest ]; then
+  if [ "$in_git" = yes ] && [ "$develop" = no ]; then
+    echo "check: --manifest is only for where the base is developed (git config hito.develop true); in a copy, blueprint/MANIFEST comes with the version" >&2
+    exit 1
+  fi
+  manifest
+  exit 0
+fi
+
+# Lines that must never reach a public base: a path into someone's home folder, an email address
+# that is not a noreply or example one, and, with "spanish" as argument, Spanish (the base is in
+# English, notes are not), told by its letters or by two of its most common words in one line.
+private_lines() {
+  awk -v spanish="${1:-}" 'BEGIN { n = split("de la el los las que para pero porque una unos esto eso este esta ese cuando donde hoy con por muy hay como todo nos les", w, " "); for (i = 1; i <= n; i++) es[w[i]] = 1 }
+    spanish == "spanish" && /ñ|Ñ|á|é|í|ó|ú|Á|É|Í|Ó|Ú|¿|¡/ { print; next }
+    spanish == "spanish" { l = tolower($0); gsub(/[^a-z]+/, " ", l); k = split(l, t, " "); c = 0
+      for (i = 1; i <= k; i++) if (t[i] in es) c++
+      if (c >= 2) { print; next } }
+    /\/(Users|home)\/[A-Za-z]/ { print; next }
+    match($0, /(^|[^A-Za-z0-9._%+\\-])[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z][A-Za-z]+/) {
+      e = tolower(substr($0, RSTART, RLENGTH)); sub(/^[^a-z0-9._%+-]/, "", e)
+      if (e !~ /noreply/ && e !~ /@example\.(com|org|net)$/) print }'
+}
+# check.sh --message FILE: the commit-msg git hook checks a commit message this way where the base
+# is developed. Lines git strips (comments) are skipped.
+if [ "$mode" = --message ]; then
+  found=$(grep -v '^#' "${2:-/dev/null}" | private_lines spanish)
+  [ -z "$found" ] && exit 0
+  echo "check: this commit message has text that must not reach the public base (Spanish, a home folder path or a personal email address):
+$found" >&2
+  exit 1
+fi
+
+# blueprint/ must match its MANIFEST. In a copy, it must be exactly the published version: an edit
+# there would be lost at the next update. Where the base is developed, every commit is what the
+# template hands out, so the MANIFEST is kept current with each change. A published version was
+# tested before it was published, so a copy never runs the tests of the base, only the owner's own.
+if [ ! -f "$base/blueprint/MANIFEST" ]; then
+  if [ "$develop" = yes ]; then
+    fail "blueprint/MANIFEST is missing; write it with: sh blueprint/scripts/check.sh --manifest > blueprint/MANIFEST"
+  else
+    fail "blueprint/MANIFEST is missing, so blueprint/ cannot be checked; restore it with: git checkout -- blueprint, or update.sh"
+  fi
+else
+  edited=$(manifest | diff "$base/blueprint/MANIFEST" - | sed -n 's/^[<>] [0-9]* [0-9]* //p' | sort -u)
+  if [ -n "$edited" ] && [ "$develop" = yes ]; then
+    fail "blueprint/MANIFEST is out of date, and every copy made from this commit would fail its check; write it with: sh blueprint/scripts/check.sh --manifest > blueprint/MANIFEST, and add it to the same commit. Files that differ:
+$(printf '%s\n' "$edited" | sed 's|^|blueprint/|')"
+  elif [ -n "$edited" ]; then
+    fail "blueprint/ is not the published version: never edit it in a copy, because an update would lose the change; your changes go in custom/ (see Customizing in AGENTS.md). Restore it with: git checkout -- blueprint, or update.sh. Where the base is developed, run once: git config hito.develop true. Files that differ:
+$(printf '%s\n' "$edited" | sed 's|^|blueprint/|')"
+  fi
+fi
+
+# Where the base is developed, it is public: a commit that adds such a line, or a file with such
+# a name, is stopped, so notes and personal data never reach it by mistake. Spanish is looked for
+# where notes would come in (Markdown, file names, the commit message); scripts hold examples.
+if [ "$develop" = yes ] && [ -n "$cached" ]; then
+  added() { git diff --cached -U0 --no-color --no-ext-diff -- "$@" ':(exclude)encrypted' | sed -n 's/^+//p' | grep -v '^++ '; }
+  found=$({ git -c core.quotePath=false diff --cached --name-only --diff-filter=AR; added '*.md'; } | private_lines spanish
+    added . ':(exclude)*.md' | private_lines)
+  [ -z "$found" ] || fail "this commit adds text that must not reach the public base (Spanish, a home folder path or a personal email address); the base is in English and notes go in a copy:
+$found"
+fi
+
 # Before a commit, the tests of the scripts run only if the commit touches the scripts, the
 # git hooks or .gitattributes, the only things that can break them; the guards below always run.
 # A manual run, or a first commit, runs every test.
@@ -55,16 +139,20 @@ fi
 # 1. The scripts still do what they promise. test-check.sh runs this script in throwaway
 #    repositories and marks each run with a file it creates; only a run that points at that
 #    file skips test-check.sh, so a stray HITO_IN_TEST in the environment skips nothing.
-if [ "$run_tests" = yes ]; then
+if [ "$run_tests" = yes ] && [ "$develop" = yes ]; then
   sh "$base/blueprint/scripts/test-rules.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-rules.sh fails"
   sh "$base/blueprint/scripts/test-skills.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-skills.sh fails"
   sh "$base/blueprint/scripts/test-global.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-global.sh fails"
   sh "$base/blueprint/scripts/test-today.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-today.sh fails"
   sh "$base/blueprint/scripts/test-update.sh" > /dev/null 2>&1 || fail "blueprint/scripts/test-update.sh fails"
+fi
+if [ "$run_tests" = yes ]; then
   for t in "$base"/custom/git-hooks/test-*.sh; do
     [ -e "$t" ] || continue
     sh "$t" > /dev/null 2>&1 || fail "${t#"$base"/} fails"
   done
+fi
+if [ "$run_tests" = yes ] && [ "$develop" = yes ]; then
   if [ -n "${HITO_IN_TEST:-}" ] && [ -f "$HITO_IN_TEST/.hito-test-run" ]; then
     echo "check: nested run inside test-check.sh; test-check.sh and test-install.sh skipped" >&2
   elif [ "$have_git" = yes ]; then
@@ -211,7 +299,7 @@ for f in $(git ls-files -- 'blueprint/scripts/*' 'blueprint/git-hooks/*' 'custom
 done
 
 # 7. No secret file is tracked, wherever it is, in any letter case, whatever .gitignore says.
-#    core.quotePath=false shows names such as salud-año.md as they are; names git still
+#    core.quotePath=false shows names such as naïve.md as they are; names git still
 #    quotes (control characters, quotes) are rejected, since they cannot be checked.
 files=$(git -c core.quotePath=false ls-files)
 secrets=$(printf '%s\n' "$files" | awk '{ n = tolower($0); sub(/.*\//, "", n) }

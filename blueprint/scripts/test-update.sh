@@ -4,8 +4,8 @@
 # that replaces update.sh itself, runs install.sh, touches nothing of the owner's and leaves no
 # link to the base. It refuses uncommitted changes to blueprint/, an unknown version, a version
 # whose VERSION file says otherwise, and a base with no versions.
-# The published copies get stub tests, so the check that install.sh runs does not run this file
-# again; every other check is real.
+# Each published version carries its fingerprint, so the copies run no tests of the base;
+# every other check is real.
 set -u
 export LC_ALL=C
 
@@ -27,7 +27,9 @@ ok() { passed=$((passed + 1)); }
 ko() { failed=$((failed + 1)); echo "FAIL: $1" >&2; }
 publish() { # version, then an optional line added to blueprint/templates/journal.md
   printf '%s\n' "$1" > "$pub/blueprint/VERSION"
+  { printf '# Changelog\n\n## %s\n\n- Change of %s.\n' "$1" "$1"; [ ! -f "$pub/blueprint/CHANGELOG.md" ] || sed -n '/^## /,$p' "$pub/blueprint/CHANGELOG.md"; } > "$tmp/c" && mv "$tmp/c" "$pub/blueprint/CHANGELOG.md"
   [ -z "${2:-}" ] || printf '%s\n' "$2" >> "$pub/blueprint/templates/journal.md"
+  (cd "$pub" && sh blueprint/scripts/check.sh --manifest > "$tmp/manifest") && mv "$tmp/manifest" "$pub/blueprint/MANIFEST"
   git -C "$pub" add -A && git -C "$pub" -c user.name=test -c user.email=test@example.com commit -qm "release $1" && git -C "$pub" tag "$1"
 }
 run() { (cd "$r" && sh blueprint/scripts/update.sh "$@") < /dev/null > "$tmp/out" 2>&1; }
@@ -37,8 +39,7 @@ reject() { d=$1; want=$2; shift 2
 version() { cat "$r/blueprint/VERSION" 2> /dev/null; }
 
 # A published base with v0.1, and a copy of it already set up, as the template leaves it.
-mkdir -p "$pub" && git -C "$pub" init -q && cp -R "$src" "$pub/blueprint"
-for t in "$pub"/blueprint/scripts/test-*.sh; do echo 'exit 0' > "$t"; done
+mkdir -p "$pub" && git -C "$pub" init -q && git -C "$pub" config hito.develop true && cp -R "$src" "$pub/blueprint" && rm -f "$pub/blueprint/CHANGELOG.md"
 echo old > "$pub/blueprint/OLD.txt"
 publish v0.1
 setup() {
@@ -64,6 +65,7 @@ if grep -qxF '## Today' "$r/blueprint/templates/journal.md"; then ok; else ko "b
 if [ ! -e "$r/blueprint/OLD.txt" ]; then ok; else ko "drops the files the new version no longer has"; fi
 if grep -qF 'is now v0.10 (was v0.1)' "$tmp/out"; then ok; else ko "the old update.sh finishes after replacing itself: $(cat "$tmp/out")"; fi
 if grep -qF 'new update.sh' "$r/blueprint/scripts/update.sh"; then ok; else ko "update.sh itself is replaced"; fi
+if grep -qxF -- '- Change of v0.10.' "$tmp/out" && grep -qxF -- '- Change of v0.2.' "$tmp/out" && ! grep -qxF -- '- Change of v0.1.' "$tmp/out"; then ok; else ko "shows the changes after the old version, and not the old one's: $(cat "$tmp/out")"; fi
 if [ "$(git -C "$r" status --porcelain | grep -v ' blueprint/')" = "" ]; then ok; else ko "changes nothing outside blueprint/: $(git -C "$r" status --porcelain)"; fi
 if grep -qxF 'Mine.' "$r/knowledge/mine.md"; then ok; else ko "keeps the owner's notes"; fi
 if [ -z "$(git -C "$r" remote)" ]; then ok; else ko "leaves no remote to the base"; fi
