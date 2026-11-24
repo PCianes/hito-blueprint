@@ -25,7 +25,7 @@ The blueprint is the plan every copy is built from: the rules, skills, scripts a
 - **Checks that stop mistakes.** git hooks run a check before every commit: every note has its type and date, every link points somewhere, no secret file is ever committed, and, once you set up git-crypt, everything in the sensitive folder is encrypted.
 - **A base you can update.** The shared part lives in `blueprint/`, and your changes live in `custom/`. Updating replaces `blueprint/` whole, so there is nothing to merge, and your repository never gets a link back to this one.
 
-It needs only POSIX `sh` (the basic shell that comes with macOS and Linux; on Windows, Git Bash) and git: no app, no server, no database, no account. Everything is local-first and works offline. The base is in English; write your notes in any language.
+It needs only POSIX `sh` (the basic shell that comes with macOS and Linux; on Windows, Git Bash, though it is not tested there yet) and git: no app, no server, no database, no account. Everything is local-first and works offline. The base is in English; write your notes in any language.
 
 ## Who it is for
 
