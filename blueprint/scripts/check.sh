@@ -18,9 +18,11 @@ fail() { echo "check: $*" >&2; status=1; }
 have_git=no
 command -v git > /dev/null 2>&1 && have_git=yes
 
-# This folder must be the top of its own work tree, not a folder inside another repository.
+# This folder must be the top of its own work tree, not a folder inside another repository: git
+# answers "true" and an empty prefix. Asked this way, not by comparing paths, because on Windows
+# git writes D:/x where Git Bash writes /d/x.
 in_git=no
-if [ "$have_git" = yes ] && [ "$(git rev-parse --show-toplevel 2> /dev/null)" = "$root" ]; then
+if [ "$have_git" = yes ] && [ "$(git -C "$root" rev-parse --is-inside-work-tree --show-prefix 2> /dev/null)" = true ]; then
   in_git=yes
 fi
 

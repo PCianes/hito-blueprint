@@ -19,9 +19,9 @@
 1835324337 963 rules/skills.md
 1482023536 1357 rules/type.md
 1112950331 167 rules/untouched-sources.md
-3481595691 19606 scripts/check.sh
+2537316975 19781 scripts/check.sh
 3511429175 6462 scripts/global.sh
-709755964 6330 scripts/install.sh
+231444048 6358 scripts/install.sh
 262870212 6943 scripts/rules.sh
 2356241062 4666 scripts/skills.sh
 3867593472 19445 scripts/test-check.sh

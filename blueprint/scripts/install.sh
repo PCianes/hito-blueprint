@@ -109,7 +109,7 @@ sh blueprint/scripts/skills.sh || exit 1
 sh blueprint/scripts/global.sh "$@" || exit 1
 
 # 5. The git hooks, if this is the top of a git repository.
-if command -v git > /dev/null 2>&1 && [ "$(git rev-parse --show-toplevel 2> /dev/null)" = "$root" ]; then
+if command -v git > /dev/null 2>&1 && [ "$(git -C "$root" rev-parse --is-inside-work-tree --show-prefix 2> /dev/null)" = true ]; then
   if [ "$(git config core.hooksPath)" != blueprint/git-hooks ]; then
     git config core.hooksPath blueprint/git-hooks
     say "turned the git hooks on"
