@@ -8,6 +8,7 @@ What changes in each version of the base, newest first. `update.sh` shows the ve
 - A rule: whatever goes into `sources/` comes, in the same change, with its `reading` note and its `knowledge/` notes, or a task to write them, one for each source. Otherwise it is only stored, and never used.
 - A new note type in `knowledge/`, `reading`: your reading of one source (what it says, how far you trust it, the notes that came from it). The rules also say what a `knowledge` note is: one idea in your words, titled by the idea, with its source as a one-line reference.
 - The check no longer follows links inside `sources/`, except in each `README.md`: the rest is others' material, kept as it came, so its broken links are not yours to fix.
+- `raw/`, the inbox for others' material: captured and not yet judged, or too bulky for git. It stays out of git (`install.sh` adds it to `.gitignore`, and the check stops it from being committed), and each item leaves kept whole in `sources/`, distilled into a `reading` note, or deleted. The rules also tell a source worth keeping whole from bulk material, which is only distilled.
 
 ## v0.2
 

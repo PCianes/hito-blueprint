@@ -1,4 +1,4 @@
-2577772468 2363 CHANGELOG.md
+1652083567 2747 CHANGELOG.md
 1743924582 12740 README.md
 3780849176 5 VERSION
 1350554129 654 git-hooks/commit-msg
@@ -10,8 +10,8 @@
 2245451338 94 rules/.markdownlint-cli2.yaml
 411626494 104 rules/ORDER
 1637399746 2240 rules/customizing.md
-3213345076 2350 rules/folders.md
-2265238005 1069 rules/inbox-and-sources.md
+3338806686 2466 rules/folders.md
+518146600 1915 rules/inbox-and-sources.md
 3822785548 544 rules/links.md
 530882944 638 rules/memory.md
 608378879 320 rules/secrets.md
@@ -19,14 +19,14 @@
 1835324337 963 rules/skills.md
 4039674672 1953 rules/type.md
 966295792 163 rules/untouched-sources.md
-571551242 19893 scripts/check.sh
+2784824428 20057 scripts/check.sh
 3511429175 6462 scripts/global.sh
-231444048 6358 scripts/install.sh
+1377353243 6559 scripts/install.sh
 262870212 6943 scripts/rules.sh
 2356241062 4666 scripts/skills.sh
-1793251661 20779 scripts/test-check.sh
+3700170822 20902 scripts/test-check.sh
 2228852505 7693 scripts/test-global.sh
-3107458644 7780 scripts/test-install.sh
+1655746475 7903 scripts/test-install.sh
 542124727 9222 scripts/test-rules.sh
 3197081654 6762 scripts/test-skills.sh
 496303581 2825 scripts/test-today.sh

@@ -309,6 +309,9 @@ secrets=$(printf '%s\n' "$files" | awk '{ n = tolower($0); sub(/.*\//, "", n) }
   n ~ /\.env$/ || n ~ /^\.env\./ || n ~ /\.key$/ || n ~ /\.pem$/')
 [ -z "$secrets" ] || fail "secret files are tracked; remove them from the index:
 $secrets"
+inraw=$(printf '%s\n' "$files" | grep '^raw/' || true)
+[ -z "$inraw" ] || fail "raw/ stays out of git (see Inbox and sources); remove these from the index:
+$inraw"
 odd=$(printf '%s\n' "$files" | grep '^"' || true)
 [ -z "$odd" ] || fail "file names git cannot show plainly; rename them:
 $odd"

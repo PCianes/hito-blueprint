@@ -9,6 +9,7 @@ A folder exists only if (a) deciding whether a note belongs there is a question 
 | `projects/` | Everything the owner does or maintains, one folder each with its `README.md` | Owner; agents propose |
 | `knowledge/` | What the owner knows, in their own words | Owner; agents propose |
 | `sources/` | What others say, kept whole | Owner and agents |
+| `raw/` | Others' material captured and not yet judged, or too bulky for git: never committed | Owner and agents |
 | `journal/` | One file per day, `YYYY/YYYY-MM-DD.md`: a folder per year, the full date in the name | Owner; agents propose |
 | `encrypted/` | Sensitive material: encrypted on the remote, readable on the owner's machine | Owner; agents propose |
 | `archive/` | What is finished and should no longer add noise, at the path it had (`archive/projects/<name>/`); sensitive material stays in `encrypted/` | Owner; agents propose, and read it only when asked |

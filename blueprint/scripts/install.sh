@@ -90,6 +90,8 @@ touch .gitignore
 for p in .env '*.env' '.env.*' '*.key' '*.pem'; do
   grep -qxF "$p" .gitignore || { printf '%s\n' "$p" >> .gitignore; say "added $p to .gitignore"; }
 done
+# Others' material not yet judged, or too bulky for git, waits in raw/, out of git (see Inbox and sources).
+grep -qxF /raw/ .gitignore || { echo /raw/ >> .gitignore; say "added /raw/ to .gitignore"; }
 
 # 3. Unix line endings for all text. The line goes first, because a later "* text" line
 #    would override what follows it, such as the -text that git-crypt needs.

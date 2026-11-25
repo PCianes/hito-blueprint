@@ -76,6 +76,8 @@ for s in .env app.env .env.local app.key app.pem .ENV prod.ENV x.Key x.PEM .Env.
   setup; stage_blob 'secret\n' "$s"
   reject "stops a tracked secret: $s" "secret files are tracked" --staged
 done
+setup; stage_blob 'x\n' raw/posts.md
+reject "stops anything in raw/ from being committed" "raw/ stays out of git" --staged
 setup
 if stage_blob 'x\n' 'a"b.md' 2> "$tmp/err"; then
   reject "stops a file name git cannot show plainly" "cannot show plainly" --staged

@@ -44,6 +44,7 @@ if [ "$(grep -v '^#' "$r/custom/disable" | grep -c .)" = 0 ]; then ok; else ko "
 if grep -q '^## Links' "$r/AGENTS.md"; then ko "uncommenting an example in custom/disable leaves that rule out"; else ok; fi
 has "ignores .env" .gitignore '.env'
 has "ignores *.pem" .gitignore '*.pem'
+has "ignores raw/, the inbox for others' material" .gitignore '/raw/'
 has "keeps Unix line endings" .gitattributes '* text=auto eol=lf'
 has "shows skill copies as one line" .gitattributes '.claude/skills/** -diff'
 if grep -q git-crypt "$r/.gitattributes"; then ko "adds no git-crypt line before git-crypt init"; else ok; fi
@@ -108,8 +109,8 @@ if grep -qxF "@$(cd "$r" && pwd -P)/GLOBAL.md" "$HOME/.claude/CLAUDE.md"; then o
 rm -rf "$HOME/.claude"
 setup; if run --everything; then ko "rejects an unknown option"; else ok; fi
 
-# The folders it creates are the content folders of the Folders rule.
-rule=$(sed -n 's/^| `\([a-z]*\)\/` |.*/\1/p' "$src/rules/folders.md" | grep -vx -e blueprint -e custom | tr '\n' ' ')
+# The folders it creates are the content folders of the Folders rule (raw/ stays out of git, so it is not created).
+rule=$(sed -n 's/^| `\([a-z]*\)\/` |.*/\1/p' "$src/rules/folders.md" | grep -vx -e blueprint -e custom -e raw | tr '\n' ' ')
 mine=$(sed -n 's/^folders="\(.*\)"$/\1 /p' "$src/scripts/install.sh")
 if [ "$rule" = "$mine" ]; then ok; else ko "creates the folders of rules/folders.md (rule: $rule; install.sh: $mine)"; fi
 
