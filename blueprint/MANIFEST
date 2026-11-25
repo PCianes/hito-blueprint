@@ -1,4 +1,4 @@
-1652083567 2747 CHANGELOG.md
+2362371102 2731 CHANGELOG.md
 1743924582 12740 README.md
 3780849176 5 VERSION
 1350554129 654 git-hooks/commit-msg
@@ -10,8 +10,8 @@
 2245451338 94 rules/.markdownlint-cli2.yaml
 411626494 104 rules/ORDER
 1637399746 2240 rules/customizing.md
-3338806686 2466 rules/folders.md
-518146600 1915 rules/inbox-and-sources.md
+552090394 2461 rules/folders.md
+690243354 2036 rules/inbox-and-sources.md
 3822785548 544 rules/links.md
 530882944 638 rules/memory.md
 608378879 320 rules/secrets.md

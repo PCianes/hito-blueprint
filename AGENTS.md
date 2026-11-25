@@ -13,7 +13,7 @@ A folder exists only if (a) deciding whether a note belongs there is a question 
 | `projects/` | Everything the owner does or maintains, one folder each with its `README.md` | Owner; agents propose |
 | `knowledge/` | What the owner knows, in their own words | Owner; agents propose |
 | `sources/` | What others say, kept whole | Owner and agents |
-| `raw/` | Others' material captured and not yet judged, or too bulky for git: never committed | Owner and agents |
+| `raw/` | Others' material too bulky to judge at once or to keep in git: never committed | Owner and agents |
 | `journal/` | One file per day, `YYYY/YYYY-MM-DD.md`: a folder per year, the full date in the name | Owner; agents propose |
 | `encrypted/` | Sensitive material: encrypted on the remote, readable on the owner's machine | Owner; agents propose |
 | `archive/` | What is finished and should no longer add noise, at the path it had (`archive/projects/<name>/`); sensitive material stays in `encrypted/` | Owner; agents propose, and read it only when asked |
@@ -50,7 +50,7 @@ Tasks are `- [ ]` items in their project's `README.md`. The journal links to the
 
 Not everything others wrote is a source. What is worth keeping whole, because it will be consulted or quoted as it is (a lesson, a book, a skill, a script), goes in `sources/`. Bulk material whose value is only in what it yields (forum posts, chats, a whole channel) does not: it is distilled into a `reading` note, the parts worth keeping whole are kept, and the rest is deleted.
 
-`raw/` is the inbox for others' material: what is captured and not yet judged, or too bulky for git. It stays out of git, and the check fails if anything in it is committed. Each item leaves `raw/` one of three ways: kept whole in `sources/`, distilled into a `reading` note (keeping whole only the parts worth it), or deleted. What you already know you want whole, such as a transcript downloaded on purpose, goes straight to `sources/`. Like sources, what enters `raw/` leaves a task to process it: being out of git, it is easy to forget, and it has no copy on the remote.
+`raw/` is for others' material too bulky to judge at once or to keep in git, such as a forum, a whole channel or a large download. What can be judged at once, even if by others, goes to `inbox/` or straight to `sources/`. It stays out of git, and the check fails if anything in it is committed. Each item leaves `raw/` one of three ways: kept whole in `sources/`, distilled into a `reading` note (keeping whole only the parts worth it), or deleted. What you already know you want whole, such as a transcript downloaded on purpose, goes straight to `sources/`. Like sources, what enters `raw/` leaves a task to process it: being out of git, it is easy to forget, and it has no copy on the remote.
 
 Nothing goes into `sources/` on its own: in the same change, write its `reading` note and the `knowledge/` notes with what the owner takes from it, or leave a task to write them, one for each source stored (a course, a video, an article), as a `- [ ]` item in the project it belongs to, or in `inbox/` if it has none, linking to what was stored. A source with neither is only stored, and is never used.
 
