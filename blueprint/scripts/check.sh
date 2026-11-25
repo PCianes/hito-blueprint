@@ -258,6 +258,7 @@ links=$({ [ -n "$cached" ] && printf '%s\n' "$existing" | sed 's/^/E /'; printf 
     p = substr(s, 1, RSTART - 1); ln = substr(s, RSTART + 1, RLENGTH - 2); t = substr(s, RSTART + RLENGTH)
     if (t ~ /^[ \t]*(```|~~~)/) { fence[p] = !fence[p]; next }
     if (fence[p]) next
+    if (p ~ /^(archive\/)?sources\// && p !~ /README\.md$/) next  # material of others, kept as it came
     gsub(/`[^`]*`/, "", t)
     dir = p; if (!sub(/\/[^\/]*$/, "", dir)) dir = ""
     while (match(t, /\]\([^)]*\)/)) {

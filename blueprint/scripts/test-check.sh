@@ -147,6 +147,10 @@ L() { printf '%s\n%s\n' "$(fm knowledge)" "$1"; } # a note whose line 7 is $1
 setup; note knowledge/a.md "$(L '[b](b.md)')"
 reject "stops a link to a note that does not exist" "knowledge/a.md:7: b.md" --staged
 note knowledge/b.md "$(fm knowledge)"; pass "passes once that note exists" --staged
+setup; note sources/talk/notes.md "$(printf '%s\n%s\n' "$(fm source)" '[gone](gone.md)')"
+pass "skips links inside a source: others' material is kept as it came, broken links and all" --staged
+setup; note sources/talk/README.md "$(printf '%s\n%s\n' "$(fm source)" '[gone](gone.md)')"
+reject "but checks the README.md of a source, which the owner or an agent writes" "sources/talk/README.md:7: gone.md" --staged
 setup; note knowledge/b.md "$(fm knowledge)"; note "knowledge/my note.md" "$(fm knowledge)"
 note knowledge/a.md "$(L '[w](https://x.y) [m](mailto:a@b.c) [h](#top) [s](b.md#part) [d](../knowledge/) [n](my%20note.md) [t](b.md "title") `[c](nope.md)`')"
 pass "skips web links, anchors and inline code; follows anchors, folders, spaces and titles" --staged
