@@ -5,7 +5,8 @@ What changes in each version of the base, newest first. `update.sh` shows the ve
 ## v0.3
 
 - Works on Windows, in Git Bash: every test of the base and the rehearsal pass there. Where Windows cannot do something, its tests say so and skip it: files carry no executable bit, and git refuses a file name with a double quote, so neither can ever be committed there.
-- A rule: whatever goes into `sources/` comes, in the same change, with its `knowledge/` notes or a task to write them, one for each source. Otherwise it is only stored, and never used.
+- A rule: whatever goes into `sources/` comes, in the same change, with its `reading` note and its `knowledge/` notes, or a task to write them, one for each source. Otherwise it is only stored, and never used.
+- A new note type in `knowledge/`, `reading`: your reading of one source (what it says, how far you trust it, the notes that came from it). The rules also say what a `knowledge` note is: one idea in your words, titled by the idea, with its source as a one-line reference.
 
 ## v0.2
 

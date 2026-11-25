@@ -190,7 +190,7 @@ bad=$({ printf '%s\n' "$notes" | sed 's/^/F /'; printf '%s\n' "$found" | sed 's/
     if (p ~ /^inbox\//) return "inbox"
     if (p ~ /^goals\//) return "goal"
     if (p ~ /^projects\//) return "project area"
-    if (p ~ /^knowledge\//) return "knowledge model"
+    if (p ~ /^knowledge\//) return "knowledge model reading"
     if (p ~ /^sources\//) return "source"
     if (p ~ /^journal\//) return "journal"
     return ""

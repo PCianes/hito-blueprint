@@ -103,7 +103,7 @@ fm() { printf -- '---\ntype: %s\ncreated: 2026-01-01\n---\n\n# x\n' "$1"; }
 setup
 note inbox/idea.md "$(fm inbox)"; note goals/vision.md "$(fm goal)"
 note projects/README.md "$(fm index)"; note projects/talk/README.md "$(fm area)"; note projects/talk/plan.md "$(fm project)"
-note knowledge/git.md "$(fm knowledge)"; note knowledge/leverage.md "$(fm model)"
+note knowledge/git.md "$(fm knowledge)"; note knowledge/leverage.md "$(fm model)"; note knowledge/a-talk.md "$(fm reading)"
 note sources/video/transcript.md "$(fm source)"; note sources/video/slides.pdf 'pdf'
 note journal/2026/2026-01-01.md "$(fm journal)"
 pass "accepts a valid note in every folder, and skips files that are not Markdown" --staged
@@ -115,6 +115,8 @@ setup; note knowledge/x.md '---\ncreated: 2026-01-01\n---\n\ntype: knowledge\n'
 reject "stops a note whose type is only in the body" "knowledge/x.md: no type" --staged
 setup; note knowledge/x.md "$(fm project)"
 reject "stops a type its folder does not allow" 'type "project" is not allowed here' --staged
+setup; note sources/video/my-reading.md "$(fm reading)"
+reject "stops a reading outside knowledge/, such as next to its source" 'type "reading" is not allowed here' --staged
 setup; note projects/README.md "$(fm project)"
 reject "stops a folder README that is not an index" 'type "project" is not allowed here' --staged
 setup; note projects/talk/README.md "$(fm index)"
