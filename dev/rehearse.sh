@@ -99,7 +99,11 @@ try "a link to nothing" reject git commit -qm "docs: linked"
 reset; echo "# edited" >> blueprint/rules/links.md; git add -A
 try "an edit to blueprint/ in a copy" reject git commit -qm "fix: edit the base"
 reset; chmod -x blueprint/git-hooks/pre-commit
-try "a git hook that lost its executable bit on disk" reject sh blueprint/scripts/check.sh --staged
+if [ -x blueprint/git-hooks/pre-commit ]; then
+  echo "      skipped a git hook that lost its executable bit: this file system has no such bit"
+else
+  try "a git hook that lost its executable bit on disk" reject sh blueprint/scripts/check.sh --staged
+fi
 reset; chmod +x blueprint/git-hooks/pre-commit
 mkdir -p custom/skills/my-demo; printf -- '---\nname: my-demo\ndescription: Demo.\n---\n\n# Demo\n' > custom/skills/my-demo/SKILL.md; git add -A
 try "a new skill without its copies" reject git commit -qm "feat: skill"

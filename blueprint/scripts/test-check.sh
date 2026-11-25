@@ -76,8 +76,16 @@ for s in .env app.env .env.local app.key app.pem .ENV prod.ENV x.Key x.PEM .Env.
   setup; stage_blob 'secret\n' "$s"
   reject "stops a tracked secret: $s" "secret files are tracked" --staged
 done
-setup; stage_blob 'x\n' 'a"b.md'
-reject "stops a file name git cannot show plainly" "cannot show plainly" --staged
+setup
+if stage_blob 'x\n' 'a"b.md' 2> "$tmp/err"; then
+  reject "stops a file name git cannot show plainly" "cannot show plainly" --staged
+else
+  # Only git on Windows refuses such a name, so it can never be committed there; elsewhere it is a fault.
+  case $(uname -s) in
+    (MINGW* | MSYS* | CYGWIN*) echo "test-check: skipped the file name git cannot show plainly: this system's git refuses it, so it can never be committed here" ;;
+    (*) ko "stages a file name with a double quote: $(cat "$tmp/err")" ;;
+  esac
+fi
 
 # AGENTS.md, as the commit will carry it
 setup; echo edited >> "$r/AGENTS.md"; git -C "$r" add AGENTS.md
@@ -170,10 +178,16 @@ reject "stops a hand-edited skill copy" "out of date or was edited" --staged
 # the git hooks themselves
 setup; git -C "$r" config --unset core.hooksPath
 reject "stops when the git hooks are off" "the git hooks are off"
-for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewrite; do
-  setup; chmod -x "$r/blueprint/git-hooks/$h"
-  reject "stops when $h is not executable on disk, even if the index says it is" "$h is missing or not executable on disk" --staged
-done
+# Where files carry no executable bit (Windows), chmod changes nothing and git does not need it.
+printf '#!/bin/sh\n' > "$tmp/xbit"; chmod -x "$tmp/xbit"
+if [ -x "$tmp/xbit" ]; then
+  echo "test-check: skipped the hooks that lose their executable bit: this file system has no such bit"
+else
+  for h in pre-commit pre-merge-commit commit-msg post-commit post-merge post-rewrite; do
+    setup; chmod -x "$r/blueprint/git-hooks/$h"
+    reject "stops when $h is not executable on disk, even if the index says it is" "$h is missing or not executable on disk" --staged
+  done
+fi
 setup; grep -v 'eol=lf' "$r/.gitattributes" > "$tmp/a"; cp "$tmp/a" "$r/.gitattributes"; git -C "$r" add .gitattributes
 reject "stops scripts without eol=lf" "needs 'eol=lf'" --staged
 

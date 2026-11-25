@@ -95,7 +95,13 @@ setup; skill "$r/custom/global/skills/my-own" my-own "x"; skill "$r/custom/skill
 setup; run; pass "check passes when the copies are current" --check
 echo edited >> "$r/.claude/skills/alpha/SKILL.md"; reject "check catches a hand edit in one copy" "out of date or was edited" --check
 setup; run; skill "$r/.agents/skills/zeta" zeta "x"; reject "check catches a skill added by hand to a copy" "out of date or was edited" --check
-setup; run; chmod +x "$r/.agents/skills/alpha/SKILL.md"; reject "check catches a changed executable bit" "out of date or was edited" --check
+setup; run; chmod +x "$r/.agents/skills/alpha/SKILL.md"
+# Where files carry no executable bit (Windows), chmod changes nothing, so there is nothing to catch.
+if [ -x "$r/.agents/skills/alpha/SKILL.md" ]; then
+  reject "check catches a changed executable bit" "out of date or was edited" --check
+else
+  echo "test-skills: skipped the changed executable bit: this file system has no such bit"
+fi
 setup; run; skill "$r/blueprint/skills/alpha" alpha "Changed."; reject "check catches stale copies" "out of date or was edited" --check
 setup; reject "check fails when the copies are missing" "is missing" --check
 setup; rm -rf "$r/blueprint/skills" "$r/custom/skills"; mkdir -p "$r/.agents/skills/old"; reject "check catches copies of skills that no longer exist" "come from nowhere" --check

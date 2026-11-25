@@ -1,5 +1,5 @@
 3938342532 1428 CHANGELOG.md
-2935019346 12768 README.md
+1743924582 12740 README.md
 3766715039 5 VERSION
 1350554129 654 git-hooks/commit-msg
 3545862046 485 git-hooks/post-commit
@@ -24,13 +24,13 @@
 231444048 6358 scripts/install.sh
 262870212 6943 scripts/rules.sh
 2356241062 4666 scripts/skills.sh
-3867593472 19445 scripts/test-check.sh
+2350130593 20152 scripts/test-check.sh
 2228852505 7693 scripts/test-global.sh
 3107458644 7780 scripts/test-install.sh
 542124727 9222 scripts/test-rules.sh
-917361963 6509 scripts/test-skills.sh
+3197081654 6762 scripts/test-skills.sh
 496303581 2825 scripts/test-today.sh
-3315678717 6782 scripts/test-update.sh
+1528160094 7033 scripts/test-update.sh
 1164957172 1609 scripts/today.sh
 1541150863 2781 scripts/update.sh
 2747205503 52 templates/journal.md

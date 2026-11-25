@@ -39,13 +39,16 @@ reject() { d=$1; want=$2; shift 2
 version() { cat "$r/blueprint/VERSION" 2> /dev/null; }
 
 # A published base with v0.1, and a copy of it already set up, as the template leaves it.
+# Like the real base, it keeps Unix line endings: without that, git on Windows (core.autocrlf)
+# would hand the copy scripts with Windows line endings, which sh cannot run.
 mkdir -p "$pub" && git -C "$pub" init -q && git -C "$pub" config hito.develop true && cp -R "$src" "$pub/blueprint" && rm -f "$pub/blueprint/CHANGELOG.md"
+printf '* text=auto eol=lf\n' > "$pub/.gitattributes"
 echo old > "$pub/blueprint/OLD.txt"
 publish v0.1
 setup() {
   rm -rf "$r"; mkdir -p "$r"; git -C "$pub" archive v0.1 | tar -x -C "$r"
   git -C "$r" init -q
-  (cd "$r" && sh blueprint/scripts/install.sh) < /dev/null > /dev/null 2>&1 || ko "the copy sets up"
+  (cd "$r" && sh blueprint/scripts/install.sh) < /dev/null > "$tmp/setup" 2>&1 || ko "the copy sets up: $(cat "$tmp/setup")"
   mkdir -p "$r/knowledge"; printf -- '---\ntype: knowledge\ncreated: 2020-01-01\n---\n\nMine.\n' > "$r/knowledge/mine.md"
   printf -- '- [knowledge](knowledge/mine.md)\n' >> "$r/README.md"
   git -C "$r" add -A && git -C "$r" -c user.name=test -c user.email=test@example.com commit -qm start > /dev/null 2>&1 || ko "the copy commits"

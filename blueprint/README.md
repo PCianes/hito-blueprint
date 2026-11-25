@@ -24,7 +24,7 @@ The shared base of a plain-text notes system for one person and their agents: Ma
 - `git-hooks/commit-msg`: runs `custom/git-hooks/commit-msg`, if the owner has one, so they can reject commit messages, for example ones with trailers they do not want.
 - `git-hooks/post-commit`, `git-hooks/post-merge` and `git-hooks/post-rewrite`: run `global.sh --no-ask`, so the copies outside the repository follow what was just committed, and `check.sh --warn` after operations git gives no blocking hook for, printing a warning with how to undo them.
 
-It needs only POSIX `sh` and git. On Windows, run it from Git Bash (installed with Git for Windows) or WSL; it is not tested there yet. It also works without git, with less: see below.
+It needs only POSIX `sh` and git. On Windows, run it from Git Bash (installed with Git for Windows) or WSL. It also works without git, with less: see below.
 
 ## Install
 
