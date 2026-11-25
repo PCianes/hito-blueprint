@@ -47,6 +47,8 @@ Tasks are `- [ ]` items in their project's `README.md`. The journal links to the
 
 What you already know you want whole, such as a transcript downloaded on purpose, goes straight to `sources/`.
 
+Nothing goes into `sources/` on its own: in the same change, write the `knowledge/` notes with what the owner takes from it, or leave a task to write them, one for each source stored (a course, a video, an article), as a `- [ ]` item in the project it belongs to, or in `inbox/` if it has none, linking to what was stored. A source with neither is only stored, and is never used.
+
 ## Untouched sources
 
 Others' material is never edited, and yours is never copied into it. What you think about a source goes in a `knowledge/` note that links to it.
