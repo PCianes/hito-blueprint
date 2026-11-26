@@ -195,7 +195,9 @@ else
   try "update.sh to the latest version" pass env HITO_BLUEPRINT_URL="$P" sh "$U/blueprint/scripts/update.sh"
   is "the copy is at $version" test "$(cat "$U/blueprint/VERSION")" = "$version"
   is "its note is untouched" grep -qxF "Mine." "$U/knowledge/mine.md"
-  is "nothing outside blueprint/ and AGENTS.md changed" test -z "$(git -C "$U" status --porcelain | grep -v ' blueprint/' | grep -v ' AGENTS.md$')"
+  is "nothing outside blueprint/, AGENTS.md and .gitignore changed" test -z "$(git -C "$U" status --porcelain | grep -v ' blueprint/' | grep -v ' AGENTS.md$' | grep -v ' .gitignore$')"
+  gi=$(git -C "$U" diff -U0 .gitignore | grep '^[-+][^-+]' || true)
+  is ".gitignore at most gained /raw/" test "$gi" = "" -o "$gi" = "+/raw/"
   git -C "$U" add -A; t0=$(date +%s)
   try "the update, committed through the git hooks" pass git -C "$U" commit -qm "chore: update blueprint to $version"
   t1=$(date +%s); is "in seconds ($((t1 - t0)) s)" test $((t1 - t0)) -le 20
