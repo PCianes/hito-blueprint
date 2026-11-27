@@ -5,6 +5,7 @@ What changes in each version of the base, newest first. `update.sh` shows the ve
 ## Unreleased
 
 - Notes in `goals/`, `projects/` and `knowledge/` are named in lowercase words joined by hyphens, and those in `knowledge/` with no date. The check fails otherwise. A `reading` is named after the title of its source, not after its file name.
+- A `knowledge` note is titled by its idea as a claim that reads on its own, with the context that makes it true, so it can be found without knowing where it came from.
 
 ## v0.3
 

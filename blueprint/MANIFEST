@@ -1,4 +1,4 @@
-1709641065 2989 CHANGELOG.md
+3874152759 3158 CHANGELOG.md
 1743924582 12740 README.md
 3780849176 5 VERSION
 1350554129 654 git-hooks/commit-msg
@@ -17,7 +17,7 @@
 608378879 320 rules/secrets.md
 953520301 694 rules/sensitive-data.md
 1835324337 963 rules/skills.md
-1598146963 2357 rules/type.md
+3249289612 2570 rules/type.md
 966295792 163 rules/untouched-sources.md
 2612945273 20928 scripts/check.sh
 3511429175 6462 scripts/global.sh
