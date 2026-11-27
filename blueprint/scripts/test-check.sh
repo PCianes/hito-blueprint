@@ -109,6 +109,23 @@ note knowledge/git.md "$(fm knowledge)"; note knowledge/leverage.md "$(fm model)
 note sources/video/transcript.md "$(fm source)"; note sources/video/slides.pdf 'pdf'
 note journal/2026/2026-01-01.md "$(fm journal)"
 pass "accepts a valid note in every folder, and skips files that are not Markdown" --staged
+# note names: lowercase words joined by hyphens in goals/, projects/ and knowledge/, no date in knowledge/
+setup
+note knowledge/README.md "$(fm index)"; note knowledge/the-ai-is-killing-online-courses.md "$(fm reading)"
+note knowledge/rule-80-20.md "$(fm knowledge)"; note knowledge/naïve-sets.md "$(fm knowledge)"
+note projects/talk/2026-01-01-kickoff.md "$(fm project)"; note goals/focus.md "$(fm goal)"
+note "sources/channel/2026-01-01 A Video.md" "$(fm source)"; note "inbox/Voice_Note 1.md" "$(fm inbox)"
+note journal/2026/2026-01-01.md "$(fm journal)"
+pass "accepts well-named notes, a dated project note, and any name in sources/, inbox/ and journal/" --staged
+for n in "knowledge/Two Words.md" "knowledge/two words.md" knowledge/Capital.md knowledge/snake_case.md "projects/talk/Plan.md" "goals/My Focus.md" "archive/knowledge/Old Idea.md"; do
+  setup; note "$n" "$(fm knowledge)"
+  reject "stops a badly named note: $n" "$n: not lowercase words joined by hyphens" --staged
+done
+setup; note "knowledge/2026-01-01-an-idea.md" "$(fm reading)"
+reject "stops a date in the name of a note in knowledge/" "knowledge/2026-01-01-an-idea.md: a date in the name" --staged
+setup; mkdir -p "$r/knowledge"; fm knowledge > "$r/knowledge/Not Added.md"
+reject "a manual run checks the name of a note not yet added" "knowledge/Not Added.md: not lowercase"
+
 setup; note knowledge/x.md '# no frontmatter\n'
 reject "stops a note without frontmatter" "knowledge/x.md: no frontmatter" --staged
 setup; note knowledge/x.md '---\ntype: knowledge\ncreated: 2026-01-01\n\n# x\n'
@@ -153,8 +170,8 @@ setup; note sources/talk/notes.md "$(printf '%s\n%s\n' "$(fm source)" '[gone](go
 pass "skips links inside a source: others' material is kept as it came, broken links and all" --staged
 setup; note sources/talk/README.md "$(printf '%s\n%s\n' "$(fm source)" '[gone](gone.md)')"
 reject "but checks the README.md of a source, which the owner or an agent writes" "sources/talk/README.md:7: gone.md" --staged
-setup; note knowledge/b.md "$(fm knowledge)"; note "knowledge/my note.md" "$(fm knowledge)"
-note knowledge/a.md "$(L '[w](https://x.y) [m](mailto:a@b.c) [h](#top) [s](b.md#part) [d](../knowledge/) [n](my%20note.md) [t](b.md "title") `[c](nope.md)`')"
+setup; note knowledge/b.md "$(fm knowledge)"; note "inbox/my note.md" "$(fm inbox)"
+note knowledge/a.md "$(L '[w](https://x.y) [m](mailto:a@b.c) [h](#top) [s](b.md#part) [d](../knowledge/) [n](../inbox/my%20note.md) [t](b.md "title") `[c](nope.md)`')"
 pass "skips web links, anchors and inline code; follows anchors, folders, spaces and titles" --staged
 setup; note knowledge/a.md "$(printf '%s\n```\n[z](nope.md)\n```\n' "$(fm knowledge)")"
 pass "skips links inside a code block" --staged

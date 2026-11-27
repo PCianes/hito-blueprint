@@ -2,6 +2,10 @@
 
 What changes in each version of the base, newest first. `update.sh` shows the versions after yours. **Breaking** marks a change that asks you to do something after updating, such as a renamed rule, folder or property; until v1.0 there may be some.
 
+## Unreleased
+
+- Notes in `goals/`, `projects/` and `knowledge/` are named in lowercase words joined by hyphens, and those in `knowledge/` with no date. The check fails otherwise. A `reading` is named after the title of its source, not after its file name.
+
 ## v0.3
 
 - Works on Windows, in Git Bash: every test of the base and the rehearsal pass there. Where Windows cannot do something, its tests say so and skip it: files carry no executable bit, and git refuses a file name with a double quote, so neither can ever be committed there.

@@ -1,4 +1,4 @@
-2362371102 2731 CHANGELOG.md
+1709641065 2989 CHANGELOG.md
 1743924582 12740 README.md
 3780849176 5 VERSION
 1350554129 654 git-hooks/commit-msg
@@ -17,14 +17,14 @@
 608378879 320 rules/secrets.md
 953520301 694 rules/sensitive-data.md
 1835324337 963 rules/skills.md
-4039674672 1953 rules/type.md
+1598146963 2357 rules/type.md
 966295792 163 rules/untouched-sources.md
-2784824428 20057 scripts/check.sh
+2612945273 20928 scripts/check.sh
 3511429175 6462 scripts/global.sh
 1377353243 6559 scripts/install.sh
 262870212 6943 scripts/rules.sh
 2356241062 4666 scripts/skills.sh
-3700170822 20902 scripts/test-check.sh
+1595140930 22252 scripts/test-check.sh
 2228852505 7693 scripts/test-global.sh
 1655746475 7903 scripts/test-install.sh
 542124727 9222 scripts/test-rules.sh

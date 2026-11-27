@@ -222,6 +222,17 @@ bad=$({ printf '%s\n' "$notes" | sed 's/^/F /'; printf '%s\n' "$found" | sed 's/
 [ -z "$bad" ] || fail "notes without a valid frontmatter (see Type in AGENTS.md):
 $bad"
 
+# 3b. The owner's own notes, in goals/, projects/ and knowledge/, are named in lowercase words
+#     joined by hyphens: a space, a capital letter or an underscore fails. Ideas carry no date,
+#     so in knowledge/ a name that starts with YYYY-MM-DD fails too. README.md is the exception.
+badnames=$(printf '%s\n' "$notes" | awk '
+  { p = $0; sub(/^archive\//, "", p); n = p; sub(/.*\//, "", n) }
+  p !~ /^(goals|projects|knowledge)\/.*\.md$/ || n == "README.md" { next }
+  n ~ /[A-Z_ \t]/ { print $0 ": not lowercase words joined by hyphens"; next }
+  p ~ /^knowledge\// && n ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/ { print $0 ": a date in the name of a note in knowledge/" }')
+[ -z "$badnames" ] || fail "notes named the wrong way; rename them by their title, in lowercase words joined by hyphens, with no date in knowledge/ (see Type in AGENTS.md):
+$badnames"
+
 # 4. Every relative link points to something that exists: in what the commit will carry
 #    before a commit, and on disk otherwise, so moving a note (to archive/, say) or renaming
 #    one never leaves a dead link unnoticed. Links to the web or to an anchor in the same
